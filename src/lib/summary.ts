@@ -26,7 +26,7 @@ export function eventTitle(e: BabyEvent, t: T, lang: Lang, now = Date.now()): st
     case "dirty":
     case "mixed":
     case "dry":
-      return `${t("diaper")} · ${t(e.subtype)}`;
+      return [t("diaper"), t(e.subtype), d.texture && t(`tx_${d.texture}`)].filter(Boolean).join(" · ");
     case "pumping": {
       const ml = (d.left_ml ?? 0) + (d.right_ml ?? 0);
       return `${t("pumping")}${ml ? ` · ${ml} ml` : ""}`;
