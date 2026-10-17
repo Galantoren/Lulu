@@ -236,8 +236,24 @@ function supabaseBackend(sb: SupabaseClient): Backend {
   };
 }
 
-const url = import.meta.env.VITE_SUPABASE_URL as string | undefined;
-const key = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
+/**
+ * Accepts the Project URL however it was pasted: with /rest/v1/, a trailing slash,
+ * spaces, or even the dashboard link — supabase-js needs just https://<ref>.supabase.co.
+ */
+export function normalizeSupabaseUrl(raw: string | undefined): string | undefined {
+  const v = raw?.trim();
+  if (!v) return undefined;
+  const ref = v.match(/supabase\.com\/dashboard\/project\/([a-z0-9]+)/i)?.[1];
+  if (ref) return `https://${ref}.supabase.co`;
+  try {
+    return new URL(v.includes("://") ? v : `https://${v}`).origin;
+  } catch {
+    return v;
+  }
+}
+
+const url = normalizeSupabaseUrl(import.meta.env.VITE_SUPABASE_URL as string | undefined);
+const key = (import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined)?.trim();
 
 export const backend: Backend =
   url && key ? supabaseBackend(createClient(url, key, { auth: { persistSession: true, detectSessionInUrl: true } })) : localBackend();
