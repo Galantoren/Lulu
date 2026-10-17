@@ -104,9 +104,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setProfile(p);
       setFamily(f);
       if (!p || !f) return setPhase("onboarding");
-      const [bs, ms] = await Promise.all([backend.listBabies(f.id), backend.getMembers(f.id)]);
+      const bs = await backend.listBabies(f.id);
       setBabies(bs);
-      setMembers(ms);
+      // Partner names are only for the log avatars; never let them block opening the app.
+      backend.getMembers(f.id).then(setMembers).catch((err) => console.error(err));
       setPhase(bs.length ? "ready" : "onboarding");
     } catch (err) {
       console.error(err);
