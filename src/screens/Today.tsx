@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { AlertCircle, Moon, Sun } from "lucide-react";
+import { AlertCircle, HeartPulse, Moon, Pill, Sun, Thermometer } from "lucide-react";
 import { useApp, useNow } from "../state/AppContext";
 import { CATEGORY_ICON, CATEGORY_ORDER, LONG_RUNNING_HOURS, catVar, suggestMeal, suggestSleepType } from "../lib/categories";
 import { DayRing } from "../components/DayRing";
@@ -68,11 +68,7 @@ export function Today() {
       const e = await startTimer("pumping", "pumping", { left_ml: 0, right_ml: 0 });
       return undoStart(e, t("started", { what: t("pumping") }));
     }
-    if (c === "diaper") {
-      const e = newEvent("diaper", "wet");
-      await saveEvent(e);
-      return undoStart(e, `${t("logged")} · ${t("diaper")} · ${t("wet")}`);
-    }
+    if (c === "diaper") return openSheet({ kind: "event", event: newEvent("diaper", "wet"), isNew: true });
     openSheet({ kind: "event", event: newEvent("health", "medicine", { unit: "ml" }), isNew: true });
   }
 
@@ -91,8 +87,10 @@ export function Today() {
     { c: "feeding", title: "lastFeed", e: last("feeding"), extra: lastBreast ? t("nextSide", { side: t(nextSide === "L" ? "left" : "right") }) : undefined },
     { c: "diaper", title: "lastDiaper", e: last("diaper") },
     { c: "pumping", title: "lastPump", e: last("pumping") },
-    { c: "health", title: "lastDose", e: events.find((e) => e.subtype === "medicine") },
   ];
+  const lastMed = events.find((e) => e.subtype === "medicine");
+  const lastTemp = events.find((e) => e.subtype === "temperature");
+  const fever = (lastTemp?.data.celsius ?? 0) >= 38;
 
   return (
     <>
@@ -173,6 +171,21 @@ export function Today() {
               </button>
             );
           })}
+          {/* Medicine and temperature share a card, each with its own time */}
+          <button className="card tinted press" style={{ ["--cat" as string]: catVar("health") }}
+            onClick={() => openSheet({ kind: "event", event: newEvent("health", "medicine", { unit: "ml" }), isNew: true })}>
+            <div className="head" style={{ whiteSpace: "nowrap" }}><HeartPulse size={18} />{t("medTemp")}</div>
+            <div className="med-item">
+              <div className="med-line"><Pill size={15} /><span className="num">{lastMed ? ago(lastMed) : "—"}</span></div>
+              {lastMed && <div className="t-foot ellipsis">{eventTitle(lastMed, t, lang, now)}</div>}
+            </div>
+            <div className="med-item">
+              <div className="med-line" style={{ color: fever ? "var(--amber)" : undefined }}>
+                <Thermometer size={15} /><span className="num">{lastTemp?.data.celsius ? `${lastTemp.data.celsius.toFixed(1)} °C` : "—"}</span>
+              </div>
+              {lastTemp && <div className="t-foot num">{ago(lastTemp)}</div>}
+            </div>
+          </button>
         </div>
 
         <div className="chips">

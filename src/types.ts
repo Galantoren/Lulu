@@ -30,6 +30,7 @@ export interface EventData {
   reaction?: "none" | "liked" | "disliked" | "rash" | "upset" | "other";
   // diaper
   color?: string;
+  texture?: "watery" | "runny" | "seedy" | "soft" | "formed" | "hard";
   // pumping
   left_ml?: number;
   right_ml?: number;

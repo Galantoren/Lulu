@@ -57,14 +57,21 @@ export function Sheet({ title, onClose, onSave, saveLabel, cancelLabel, children
   );
 }
 
+/** Soft pill segmented control with a sliding thumb, tinted by the surrounding --cat colour. */
 export function Seg<V extends string>({ value, options, onChange, label }: {
   value: V;
   options: { value: V; label: string }[];
   onChange: (v: V) => void;
   label?: string;
 }) {
+  const i = options.findIndex((o) => o.value === value);
+  const n = options.length;
   return (
     <div className="seg" role="group" aria-label={label}>
+      {i >= 0 && (
+        <span className="seg-thumb" aria-hidden
+          style={{ width: `calc((100% - 8px) / ${n})`, insetInlineStart: `calc(4px + ${i} * (100% - 8px) / ${n})` }} />
+      )}
       {options.map((o) => (
         <button key={o.value} aria-pressed={value === o.value} onClick={() => onChange(o.value)}>{o.label}</button>
       ))}

@@ -13,6 +13,7 @@ import type { BabyEvent, EventData, Side, Subtype } from "../types";
 import type { TKey } from "../i18n";
 
 const LOCATIONS = ["crib", "stroller", "car", "arms", "bed"] as const;
+const TEXTURES = ["watery", "runny", "seedy", "soft", "formed", "hard"] as const;
 const DIAPER_COLORS = ["#E8D36A", "#C9A24B", "#8A6A3B", "#6B8E3D", "#4A3B2A", "#C0392B"];
 
 export function EventSheet({ initial, isNew, onClose }: { initial: BabyEvent; isNew: boolean; onClose: () => void }) {
@@ -86,6 +87,21 @@ export function EventSheet({ initial, isNew, onClose }: { initial: BabyEvent; is
     if (next.subtype === "breastfeeding") next = { ...withSide(next, null, n), ended_at: next.ended_at };
     setE(next);
   }
+
+  // No `capture` attribute: iPhone then offers both "Take photo" and the photo library.
+  const photoField = (
+    <>
+      <input ref={fileRef} type="file" accept="image/*" hidden onChange={(ev) => { onPhoto(ev.target.files?.[0]); ev.target.value = ""; }} />
+      {e.photo_path ? (
+        <div>
+          <Photo path={e.photo_path} className="photo-preview" />
+          <button className="btn plain block" style={{ marginTop: 8 }} onClick={() => set({ photo_path: null })}><X size={18} />{t("removePhoto")}</button>
+        </div>
+      ) : (
+        <button className="btn soft block press" disabled={busy} onClick={() => fileRef.current?.click()}><Camera size={20} />{busy ? "…" : t("addPhoto")}</button>
+      )}
+    </>
+  );
 
   const title = isNew ? t(e.category) : t(e.category === "sleep" ? "sleep" : (e.subtype as TKey));
 
@@ -199,15 +215,7 @@ export function EventSheet({ initial, isNew, onClose }: { initial: BabyEvent; is
                   </div>
                 </div>
               </Field>
-              <input ref={fileRef} type="file" accept="image/*" capture="environment" hidden onChange={(ev) => onPhoto(ev.target.files?.[0])} />
-              {e.photo_path ? (
-                <div style={{ position: "relative" }}>
-                  <Photo path={e.photo_path} className="card" />
-                  <button className="btn plain" style={{ marginTop: 8 }} onClick={() => set({ photo_path: null })}><X size={18} />{t("removePhoto")}</button>
-                </div>
-              ) : (
-                <button className="btn soft block press" disabled={busy} onClick={() => fileRef.current?.click()}><Camera size={20} />{t("addPhoto")}</button>
-              )}
+              {photoField}
               <Field label={t("amountEaten")}>
                 <Seg value={d.amount_eaten ?? ("" as never)} onChange={(v) => setData({ amount_eaten: v })}
                   options={(["taste", "some", "most", "all"] as const).map((m) => ({ value: m, label: t(m) }))} />
@@ -238,6 +246,16 @@ export function EventSheet({ initial, isNew, onClose }: { initial: BabyEvent; is
             <Row label={t("dry")}><Switch checked={e.subtype === "dry"} onChange={(v) => set({ subtype: v ? "dry" : "wet" })} label={t("dry")} /></Row>
           </Group>
           {(e.subtype === "dirty" || e.subtype === "mixed") && (
+            <Field label={t("texture")}>
+              <div className="chips">
+                {TEXTURES.map((x) => (
+                  <button key={x} className="chip" style={{ ["--cat" as string]: "var(--c-diaper)" }} aria-pressed={d.texture === x}
+                    onClick={() => setData({ texture: d.texture === x ? undefined : x })}>{t(`tx_${x}` as TKey)}</button>
+                ))}
+              </div>
+            </Field>
+          )}
+          {(e.subtype === "dirty" || e.subtype === "mixed") && (
             <Field label={t("color")}>
               <div className="swatches">
                 {DIAPER_COLORS.map((c) => (
@@ -247,6 +265,7 @@ export function EventSheet({ initial, isNew, onClose }: { initial: BabyEvent; is
               </div>
             </Field>
           )}
+          {photoField}
         </>
       )}
 
@@ -317,7 +336,7 @@ export function EventSheet({ initial, isNew, onClose }: { initial: BabyEvent; is
           <div className="row">
             <span className="grow">{t("stillRunningLabel")}</span>
             <span className="num muted">{fmtDuration(now - new Date(e.started_at).getTime(), lang, true)}</span>
-            <button className="btn plain" style={{ minHeight: 36, padding: "0 12px" }} onClick={stopNow}><Square size={14} fill="currentColor" />{t("stop")}</button>
+            <button className="stop-btn press" aria-label={t("stop")} onClick={stopNow}><Square size={14} fill="currentColor" /></button>
           </div>
         ) : (
           <Row label={t("end")}>

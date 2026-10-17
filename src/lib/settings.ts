@@ -7,6 +7,8 @@ export interface DeviceSettings {
   lastBottleMl: number;
   lastMilkType: "formula" | "breastmilk";
   lastBrand: string;
+  /** Language chosen before signing in; the profile's language wins once it exists. */
+  language: "en" | "he" | null;
 }
 
 const KEY = "lulu:device";
@@ -18,6 +20,7 @@ const defaults: DeviceSettings = {
   lastBottleMl: 120,
   lastMilkType: "formula",
   lastBrand: "",
+  language: null,
 };
 
 export function loadSettings(): DeviceSettings {

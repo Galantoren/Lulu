@@ -81,7 +81,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const membersRef = useRef<Member[]>([]);
   membersRef.current = members;
 
-  const lang: Lang = profile?.language ?? (navigator.language.startsWith("he") ? "he" : "en");
+  const lang: Lang = profile?.language ?? settings.language ?? (navigator.language.startsWith("he") ? "he" : "en");
   const t = useCallback<T>((k, v) => translate(lang, k, v), [lang]);
 
   const setSettings = useCallback((patch: Partial<DeviceSettings>) => {

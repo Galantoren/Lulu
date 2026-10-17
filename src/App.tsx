@@ -9,6 +9,7 @@ import { Today } from "./screens/Today";
 import { History } from "./screens/History";
 import { Health } from "./screens/Health";
 import { More } from "./screens/More";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 
 function Shell() {
   const { phase, sheet, openSheet, events } = useApp();
@@ -23,24 +24,31 @@ function Shell() {
 
   return (
     <div className="app" style={{ ["--dock-h" as string]: `${runningCount * 64}px` }}>
-      {tab === "today" && <Today />}
-      {tab === "history" && <History />}
-      {tab === "health" && <Health />}
-      {tab === "more" && <More />}
+      {/* A crash in one tab shows its error there; the tab bar keeps working */}
+      <ErrorBoundary resetKey={tab}>
+        {tab === "today" && <Today />}
+        {tab === "history" && <History />}
+        {tab === "health" && <Health />}
+        {tab === "more" && <More />}
+      </ErrorBoundary>
       <Dock />
       <TabBar tab={tab} onChange={setTab} />
+      <ErrorBoundary resetKey={sheet ? sheet.kind : "none"}>
       {sheet?.kind === "event" && <EventSheet key={sheet.event.id} initial={sheet.event} isNew={sheet.isNew} onClose={close} />}
       {sheet?.kind === "baby" && <BabyEditSheet baby={sheet.baby} onClose={close} />}
       {sheet?.kind === "babies" && <BabyPickerSheet onClose={close} />}
       {sheet?.kind === "import" && <ImportSheet onClose={close} />}
+      </ErrorBoundary>
     </div>
   );
 }
 
 export default function App() {
   return (
-    <AppProvider>
-      <Shell />
-    </AppProvider>
+    <ErrorBoundary>
+      <AppProvider>
+        <Shell />
+      </AppProvider>
+    </ErrorBoundary>
   );
 }
