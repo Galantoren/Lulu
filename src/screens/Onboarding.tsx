@@ -6,16 +6,27 @@ import { Seg } from "../components/Sheet";
 import { backend, uuid } from "../lib/backend";
 import type { Baby, Lang } from "../types";
 
+const EMAIL_KEY = "lulu:loginEmail";
+
 export function Login() {
-  const { t } = useApp();
-  const [email, setEmail] = useState("");
-  const [sent, setSent] = useState(false);
+  const { t, authError, user, refresh } = useApp();
+  const [email, setEmail] = useState(() => localStorage.getItem(EMAIL_KEY) ?? "");
+  const [sent, setSent] = useState(() => !!localStorage.getItem(EMAIL_KEY));
   const [code, setCode] = useState("");
   const [err, setErr] = useState("");
+  const [busy, setBusy] = useState(false);
   const run = async (fn: () => Promise<void>) => {
     setErr("");
-    try { await fn(); } catch (e) { setErr((e as Error).message); }
+    setBusy(true);
+    try { await fn(); } catch (e) { setErr((e as Error).message); } finally { setBusy(false); }
   };
+  const send = () => run(async () => {
+    await backend.sendLoginEmail(email.trim());
+    localStorage.setItem(EMAIL_KEY, email.trim());
+    setSent(true);
+  });
+  const shownError = err || authError;
+
   return (
     <div className="onb">
       <Moon size={44} color="var(--c-sleep)" />
@@ -23,25 +34,47 @@ export function Login() {
         <h1 className="t-large" style={{ margin: "0 0 8px" }}>{t("welcome")}</h1>
         <p className="t-callout muted" style={{ margin: 0 }}>{t("welcomeSub")}</p>
       </div>
-      <div className="group">
-        <label className="row"><span>{t("email")}</span>
-          <input type="email" autoComplete="email" value={email} placeholder="you@example.com" onChange={(e) => setEmail(e.target.value)} />
-        </label>
-        {sent && (
-          <label className="row"><span>{t("code")}</span>
-            <input type="text" inputMode="numeric" autoComplete="one-time-code" value={code} placeholder="123456" onChange={(e) => setCode(e.target.value)} />
-          </label>
-        )}
-      </div>
-      {sent && <p className="t-foot" style={{ margin: 0 }}>{t("checkEmail")}</p>}
-      {err && <p className="t-foot" style={{ margin: 0, color: "var(--danger)" }}>{err}</p>}
-      <div className="spacer" />
-      {sent ? (
-        <button className="btn block press" disabled={code.length < 6} onClick={() => run(() => backend.verifyCode(email, code))}>{t("verify")}</button>
+
+      {user ? (
+        // Signed in, but loading the family failed: say so instead of asking to sign in again.
+        <>
+          <p className="t-callout" style={{ margin: 0 }}>{t("signedInAs", { email: user.email ?? "" })}</p>
+          {shownError && <p className="t-foot" style={{ margin: 0, color: "var(--danger)" }}>{shownError}</p>}
+          <div className="spacer" />
+          <button className="btn block press" onClick={() => refresh()}>{t("tryAgain")}</button>
+          <button className="btn plain block press" onClick={() => backend.signOut()}>{t("signOut")}</button>
+        </>
       ) : (
-        <button className="btn block press" disabled={!email.includes("@")} onClick={() => run(async () => { await backend.sendLoginEmail(email); setSent(true); })}>
-          {t("sendLink")}
-        </button>
+        <>
+          <div className="group">
+            <label className="row"><span>{t("email")}</span>
+              <input type="email" autoComplete="email" value={email} placeholder="you@example.com" onChange={(e) => setEmail(e.target.value)} />
+            </label>
+            {sent && (
+              <label className="row"><span>{t("code")}</span>
+                <input type="text" inputMode="numeric" autoComplete="one-time-code" value={code} placeholder="123456"
+                  onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))} />
+              </label>
+            )}
+          </div>
+          {sent && <p className="t-foot" style={{ margin: 0 }}>{t("checkEmail")}</p>}
+          {shownError && <p className="t-foot" style={{ margin: 0, color: "var(--danger)" }}>{shownError}</p>}
+          <div className="spacer" />
+          {sent ? (
+            <>
+              <button className="btn block press" disabled={busy || code.length < 6 || !email.includes("@")}
+                onClick={() => run(async () => { await backend.verifyCode(email.trim(), code); localStorage.removeItem(EMAIL_KEY); })}>
+                {t("verify")}
+              </button>
+              <button className="btn plain block press" disabled={busy || !email.includes("@")} onClick={send}>{t("resendEmail")}</button>
+            </>
+          ) : (
+            <>
+              <button className="btn block press" disabled={busy || !email.includes("@")} onClick={send}>{t("sendLink")}</button>
+              <button className="link" onClick={() => setSent(true)}>{t("haveCode")}</button>
+            </>
+          )}
+        </>
       )}
     </div>
   );

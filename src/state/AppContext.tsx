@@ -24,6 +24,8 @@ type Phase = "loading" | "login" | "onboarding" | "ready";
 
 interface Ctx {
   phase: Phase;
+  /** Why the login screen is showing when it shouldn't be (expired link, load failure). */
+  authError: string;
   user: User | null;
   profile: Profile | null;
   family: Family | null;
@@ -65,6 +67,7 @@ const WINDOW_DAYS = 35;
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const [phase, setPhase] = useState<Phase>("loading");
+  const [authError, setAuthError] = useState(readLinkError);
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [family, setFamily] = useState<Family | null>(null);
@@ -109,8 +112,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
       // Partner names are only for the log avatars; never let them block opening the app.
       backend.getMembers(f.id).then(setMembers).catch((err) => console.error(err));
       setPhase(bs.length ? "ready" : "onboarding");
+      setAuthError("");
     } catch (err) {
       console.error(err);
+      setAuthError((err as Error).message || String(err));
       setPhase((ph) => (ph === "loading" ? "login" : ph));
     }
   }, []);
@@ -307,15 +312,24 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo<Ctx>(
     () => ({
-      phase, user, profile, family, members, babies, baby, events, settings, lang, t,
+      phase, authError, user, profile, family, members, babies, baby, events, settings, lang, t,
       setSettings, refresh, saveProfile, saveBaby, newEvent, saveEvent, startTimer, stopEvent, deleteEvent, importEvents,
       toast, showToast, dismissToast, sheet, openSheet, memberName,
     }),
-    [phase, user, profile, family, members, babies, baby, events, settings, lang, t, setSettings, refresh, saveProfile,
+    [phase, authError, user, profile, family, members, babies, baby, events, settings, lang, t, setSettings, refresh, saveProfile,
       saveBaby, newEvent, saveEvent, startTimer, stopEvent, deleteEvent, importEvents, toast, showToast, dismissToast, sheet, memberName],
   );
 
   return <AppCtx.Provider value={value}>{children}</AppCtx.Provider>;
+}
+
+/** Supabase sends failed sign-in links back as #error_description=… (e.g. an expired or already-used link). */
+function readLinkError(): string {
+  const params = new URLSearchParams(window.location.hash.slice(1) || window.location.search.slice(1));
+  const msg = params.get("error_description");
+  if (!msg) return "";
+  history.replaceState(null, "", window.location.pathname);
+  return msg.replace(/\+/g, " ");
 }
 
 /** Re-renders every `ms` so live timers tick. Elapsed time is always derived from started_at. */
