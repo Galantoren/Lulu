@@ -19,7 +19,7 @@ With no Supabase keys the app saves everything **on this device** (browser stora
 3. **Authentication → Sign In / Providers → Email**: keep it enabled.
    Optional but recommended for the home-screen app: **Authentication → Emails → Magic Link** template,
    add `Your code: {{ .Token }}` so you can type the 6-digit code instead of opening the link.
-4. **Authentication → URL Configuration**: set *Site URL* to your site, e.g. `https://galantoren.github.io/lulu/`
+4. **Authentication → URL Configuration**: set *Site URL* to your site, e.g. `https://galantoren.github.io/Lulu/`
    (and add `http://localhost:5173` under *Redirect URLs* for local dev).
 5. **Project Settings → API**: copy the *Project URL* and the *anon public* key.
    - Local: copy `.env.example` to `.env.local` and fill both values.
@@ -32,7 +32,7 @@ The anon key is safe to ship in the website; Row Level Security in `schema.sql` 
 
 1. Repo **Settings → Pages → Build and deployment → Source: GitHub Actions**.
 2. Merge to `main`. The workflow in `.github/workflows/deploy.yml` builds and publishes to
-   `https://galantoren.github.io/lulu/`.
+   `https://galantoren.github.io/Lulu/`.
 3. On iPhone open the link in Safari → Share → **Add to Home Screen**.
 
 ## Import history from Nara (or another tracker)
