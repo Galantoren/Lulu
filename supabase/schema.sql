@@ -14,7 +14,7 @@ create table if not exists families (
   id uuid primary key default gen_random_uuid(),
   name text not null,
   invite_code text not null unique default upper(substr(md5(gen_random_uuid()::text), 1, 6)),
-  created_by uuid references auth.users default auth.uid(),
+  created_by uuid references auth.users on delete set null default auth.uid(),
   created_at timestamptz not null default now()
 );
 
@@ -43,7 +43,7 @@ create table if not exists events (
   subtype text,
   started_at timestamptz not null,
   ended_at timestamptz,              -- null = timer running
-  logged_by uuid references auth.users default auth.uid(),
+  logged_by uuid references auth.users on delete set null default auth.uid(),
   note text,
   data jsonb not null default '{}',
   photo_path text,
@@ -52,6 +52,12 @@ create table if not exists events (
   deleted_at timestamptz             -- soft delete, so Undo works
 );
 create index if not exists events_baby_started on events (baby_id, started_at desc);
+
+-- Projects created with an earlier version of this file: let accounts be deleted.
+alter table families drop constraint if exists families_created_by_fkey,
+  add constraint families_created_by_fkey foreign key (created_by) references auth.users on delete set null;
+alter table events drop constraint if exists events_logged_by_fkey,
+  add constraint events_logged_by_fkey foreign key (logged_by) references auth.users on delete set null;
 
 -- Membership check used by every policy. security definer avoids recursive RLS.
 create or replace function is_member(fid uuid) returns boolean
