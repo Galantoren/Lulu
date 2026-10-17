@@ -10,22 +10,39 @@ const EMAIL_KEY = "lulu:loginEmail";
 
 export function Login() {
   const { t, authError, user, refresh } = useApp();
+  const [mode, setMode] = useState<"signin" | "signup" | "email">("signin");
   const [email, setEmail] = useState(() => localStorage.getItem(EMAIL_KEY) ?? "");
-  const [sent, setSent] = useState(() => !!localStorage.getItem(EMAIL_KEY));
+  const [password, setPassword] = useState("");
+  const [sent, setSent] = useState(false);
   const [code, setCode] = useState("");
   const [err, setErr] = useState("");
+  const [info, setInfo] = useState("");
   const [busy, setBusy] = useState(false);
   const run = async (fn: () => Promise<void>) => {
     setErr("");
+    setInfo("");
     setBusy(true);
     try { await fn(); } catch (e) { setErr((e as Error).message); } finally { setBusy(false); }
   };
-  const send = () => run(async () => {
-    await backend.sendLoginEmail(email.trim());
-    localStorage.setItem(EMAIL_KEY, email.trim());
-    setSent(true);
-  });
+  const mail = email.trim();
+  const remember = () => localStorage.setItem(EMAIL_KEY, mail);
+  const send = () => run(async () => { await backend.sendLoginEmail(mail); remember(); setSent(true); });
   const shownError = err || authError;
+  const okEmail = mail.includes("@");
+
+  if (user) {
+    // Signed in, but loading the family failed: say so instead of asking to sign in again.
+    return (
+      <div className="onb">
+        <Moon size={44} color="var(--c-sleep)" />
+        <p className="t-callout" style={{ margin: 0 }}>{t("signedInAs", { email: user.email ?? "" })}</p>
+        {shownError && <p className="t-foot" style={{ margin: 0, color: "var(--danger)" }}>{shownError}</p>}
+        <div className="spacer" />
+        <button className="btn block press" onClick={() => refresh()}>{t("tryAgain")}</button>
+        <button className="btn plain block press" onClick={() => backend.signOut()}>{t("signOut")}</button>
+      </div>
+    );
+  }
 
   return (
     <div className="onb">
@@ -35,47 +52,58 @@ export function Login() {
         <p className="t-callout muted" style={{ margin: 0 }}>{t("welcomeSub")}</p>
       </div>
 
-      {user ? (
-        // Signed in, but loading the family failed: say so instead of asking to sign in again.
+      {mode !== "email" && (
+        <Seg value={mode} onChange={(v) => { setMode(v); setErr(""); setInfo(""); }}
+          options={[{ value: "signin", label: t("signIn") }, { value: "signup", label: t("createAccount") }]} />
+      )}
+
+      <div className="group">
+        <label className="row"><span>{t("email")}</span>
+          <input type="email" autoComplete="email" value={email} placeholder="you@example.com" onChange={(e) => setEmail(e.target.value)} />
+        </label>
+        {mode !== "email" && (
+          <label className="row"><span>{t("password")}</span>
+            <input type="password" value={password} placeholder={mode === "signup" ? t("passwordHint") : "••••••"}
+              autoComplete={mode === "signup" ? "new-password" : "current-password"} onChange={(e) => setPassword(e.target.value)} />
+          </label>
+        )}
+        {mode === "email" && sent && (
+          <label className="row"><span>{t("code")}</span>
+            <input type="text" inputMode="numeric" autoComplete="one-time-code" value={code} placeholder="123456"
+              onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))} />
+          </label>
+        )}
+      </div>
+
+      {mode === "email" && sent && <p className="t-foot" style={{ margin: 0 }}>{t("checkEmail")}</p>}
+      {info && <p className="t-foot" style={{ margin: 0 }}>{info}</p>}
+      {shownError && <p className="t-foot" style={{ margin: 0, color: "var(--danger)" }}>{shownError}</p>}
+      <div className="spacer" />
+
+      {mode === "signin" && (
+        <button className="btn block press" disabled={busy || !okEmail || !password}
+          onClick={() => run(async () => { await backend.signInWithPassword(mail, password); remember(); })}>{t("signIn")}</button>
+      )}
+      {mode === "signup" && (
+        <button className="btn block press" disabled={busy || !okEmail || password.length < 6}
+          onClick={() => run(async () => {
+            const signedIn = await backend.signUp(mail, password);
+            remember();
+            if (!signedIn) setInfo(t("confirmEmailFirst"));
+          })}>{t("createAccount")}</button>
+      )}
+      {mode === "email" && (sent ? (
         <>
-          <p className="t-callout" style={{ margin: 0 }}>{t("signedInAs", { email: user.email ?? "" })}</p>
-          {shownError && <p className="t-foot" style={{ margin: 0, color: "var(--danger)" }}>{shownError}</p>}
-          <div className="spacer" />
-          <button className="btn block press" onClick={() => refresh()}>{t("tryAgain")}</button>
-          <button className="btn plain block press" onClick={() => backend.signOut()}>{t("signOut")}</button>
+          <button className="btn block press" disabled={busy || code.length < 6 || !okEmail}
+            onClick={() => run(async () => { await backend.verifyCode(mail, code); })}>{t("verify")}</button>
+          <button className="btn plain block press" disabled={busy || !okEmail} onClick={send}>{t("resendEmail")}</button>
         </>
       ) : (
-        <>
-          <div className="group">
-            <label className="row"><span>{t("email")}</span>
-              <input type="email" autoComplete="email" value={email} placeholder="you@example.com" onChange={(e) => setEmail(e.target.value)} />
-            </label>
-            {sent && (
-              <label className="row"><span>{t("code")}</span>
-                <input type="text" inputMode="numeric" autoComplete="one-time-code" value={code} placeholder="123456"
-                  onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))} />
-              </label>
-            )}
-          </div>
-          {sent && <p className="t-foot" style={{ margin: 0 }}>{t("checkEmail")}</p>}
-          {shownError && <p className="t-foot" style={{ margin: 0, color: "var(--danger)" }}>{shownError}</p>}
-          <div className="spacer" />
-          {sent ? (
-            <>
-              <button className="btn block press" disabled={busy || code.length < 6 || !email.includes("@")}
-                onClick={() => run(async () => { await backend.verifyCode(email.trim(), code); localStorage.removeItem(EMAIL_KEY); })}>
-                {t("verify")}
-              </button>
-              <button className="btn plain block press" disabled={busy || !email.includes("@")} onClick={send}>{t("resendEmail")}</button>
-            </>
-          ) : (
-            <>
-              <button className="btn block press" disabled={busy || !email.includes("@")} onClick={send}>{t("sendLink")}</button>
-              <button className="link" onClick={() => setSent(true)}>{t("haveCode")}</button>
-            </>
-          )}
-        </>
-      )}
+        <button className="btn block press" disabled={busy || !okEmail} onClick={send}>{t("sendLink")}</button>
+      ))}
+      <button className="link" onClick={() => { setMode(mode === "email" ? "signin" : "email"); setErr(""); setInfo(""); }}>
+        {mode === "email" ? t("usePassword") : t("useEmailLink")}
+      </button>
     </div>
   );
 }

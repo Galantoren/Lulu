@@ -13,6 +13,9 @@ export interface Backend {
   onAuthChange(cb: () => void): () => void;
   sendLoginEmail(email: string): Promise<void>;
   verifyCode(email: string, code: string): Promise<void>;
+  signInWithPassword(email: string, password: string): Promise<void>;
+  /** Returns false when Supabase still wants the email confirmed before signing in. */
+  signUp(email: string, password: string): Promise<boolean>;
   signOut(): Promise<void>;
   getProfile(): Promise<Profile | null>;
   saveProfile(p: Profile): Promise<void>;
@@ -67,6 +70,10 @@ function localBackend(): Backend {
     },
     async sendLoginEmail() {},
     async verifyCode() {},
+    async signInWithPassword() {},
+    async signUp() {
+      return true;
+    },
     async signOut() {},
     async getProfile() {
       return read<Profile | null>("profile", null);
@@ -156,6 +163,16 @@ function supabaseBackend(sb: SupabaseClient): Backend {
     },
     async verifyCode(email, code) {
       must(await sb.auth.verifyOtp({ email, token: code, type: "email" }));
+    },
+    async signInWithPassword(email, password) {
+      const { error } = await sb.auth.signInWithPassword({ email, password });
+      if (error) throw new Error(error.message);
+    },
+    async signUp(email, password) {
+      const redirect = window.location.origin + window.location.pathname;
+      const { data, error } = await sb.auth.signUp({ email, password, options: { emailRedirectTo: redirect } });
+      if (error) throw new Error(error.message);
+      return !!data.session;
     },
     async signOut() {
       await sb.auth.signOut();
