@@ -17,6 +17,7 @@ export type SheetState =
   | { kind: "event"; event: BabyEvent; isNew: boolean }
   | { kind: "baby"; baby: Baby | null }
   | { kind: "babies" }
+  | { kind: "import" }
   | null;
 
 type Phase = "loading" | "login" | "onboarding" | "ready";
@@ -42,6 +43,7 @@ interface Ctx {
   startTimer: (category: Category, subtype: Subtype, data?: EventData) => Promise<BabyEvent>;
   stopEvent: (e: BabyEvent) => Promise<void>;
   deleteEvent: (e: BabyEvent) => Promise<void>;
+  importEvents: (list: BabyEvent[]) => Promise<void>;
   toast: Toast | null;
   showToast: (t: Omit<Toast, "id">) => void;
   dismissToast: () => void;
@@ -263,6 +265,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
     [lang, saveEvent, showToast],
   );
 
+  const importEvents = useCallback(
+    async (list: BabyEvent[]) => {
+      list.forEach((e) => seenIds.current?.add(e.id));
+      await backend.saveEvents(list);
+      await loadEvents();
+    },
+    [loadEvents],
+  );
+
   const memberName = useCallback(
     (id: string | null) => members.find((m) => m.user_id === id)?.display_name || profile?.display_name || "",
     [members, profile],
@@ -296,11 +307,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const value = useMemo<Ctx>(
     () => ({
       phase, user, profile, family, members, babies, baby, events, settings, lang, t,
-      setSettings, refresh, saveProfile, saveBaby, newEvent, saveEvent, startTimer, stopEvent, deleteEvent,
+      setSettings, refresh, saveProfile, saveBaby, newEvent, saveEvent, startTimer, stopEvent, deleteEvent, importEvents,
       toast, showToast, dismissToast, sheet, openSheet, memberName,
     }),
     [phase, user, profile, family, members, babies, baby, events, settings, lang, t, setSettings, refresh, saveProfile,
-      saveBaby, newEvent, saveEvent, startTimer, stopEvent, deleteEvent, toast, showToast, dismissToast, sheet, memberName],
+      saveBaby, newEvent, saveEvent, startTimer, stopEvent, deleteEvent, importEvents, toast, showToast, dismissToast, sheet, memberName],
   );
 
   return <AppCtx.Provider value={value}>{children}</AppCtx.Provider>;

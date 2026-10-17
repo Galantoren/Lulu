@@ -24,6 +24,8 @@ export interface Backend {
   saveBaby(b: Baby): Promise<void>;
   listEvents(babyId: string, sinceISO: string): Promise<BabyEvent[]>;
   saveEvent(e: BabyEvent): Promise<void>;
+  /** Bulk upsert, used by history import. */
+  saveEvents(list: BabyEvent[]): Promise<void>;
   /** Calls back whenever family data changes elsewhere (other parent, other tab). */
   subscribe(familyId: string, cb: () => void): () => void;
   uploadPhoto(familyId: string, blob: Blob): Promise<string>;
@@ -102,6 +104,10 @@ function localBackend(): Backend {
     async saveEvent(e) {
       const all = read<BabyEvent[]>("events", []).filter((x) => x.id !== e.id);
       write("events", [...all, e]);
+    },
+    async saveEvents(list) {
+      const ids = new Set(list.map((e) => e.id));
+      write("events", [...read<BabyEvent[]>("events", []).filter((x) => !ids.has(x.id)), ...list]);
     },
     subscribe(_familyId, cb) {
       listeners.add(cb);
@@ -201,6 +207,9 @@ function supabaseBackend(sb: SupabaseClient): Backend {
     },
     async saveEvent(e) {
       must(await sb.from("events").upsert(e));
+    },
+    async saveEvents(list) {
+      for (let i = 0; i < list.length; i += 500) must(await sb.from("events").upsert(list.slice(i, i + 500)));
     },
     subscribe(familyId, cb) {
       const ch = sb

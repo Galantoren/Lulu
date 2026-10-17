@@ -1,4 +1,4 @@
-import { ChevronRight, Cloud, Plus, Smartphone } from "lucide-react";
+import { ChevronRight, Cloud, FileUp, Plus, Smartphone } from "lucide-react";
 import { useApp } from "../state/AppContext";
 import { Seg, Switch } from "../components/Sheet";
 import { ShareInvite } from "./Onboarding";
@@ -24,6 +24,20 @@ export function More() {
   return (
     <div className="screen">
       <h1 className="t-large" style={{ margin: 0 }}>{t("more")}</h1>
+
+      <section>
+        <div className="group-label">{t("profile")}</div>
+        <div className="group">
+          <label className="row"><span className="grow">{t("yourName")}</span>
+            <input type="text" defaultValue={profile?.display_name} onBlur={(e) => profile && e.target.value.trim() && saveProfile({ ...profile, display_name: e.target.value.trim() })} />
+          </label>
+          <button className="row press" onClick={() => openSheet({ kind: "import" })}>
+            <FileUp size={20} color="var(--c-sleep)" />
+            <span className="grow">{t("importHistory")}</span>
+            <Chevron />
+          </button>
+        </div>
+      </section>
 
       <section>
         <div className="group-label">{t("babies")}</div>
@@ -55,9 +69,6 @@ export function More() {
       <section>
         <div className="group-label">{t("settings")}</div>
         <div className="group">
-          <label className="row"><span className="grow">{t("yourName")}</span>
-            <input type="text" defaultValue={profile?.display_name} onBlur={(e) => profile && e.target.value.trim() && saveProfile({ ...profile, display_name: e.target.value.trim() })} />
-          </label>
           <div className="row"><span className="grow">{t("language")}</span>
             <div style={{ width: 170 }}>
               <Seg value={lang} onChange={(v) => profile && saveProfile({ ...profile, language: v })}

@@ -35,6 +35,13 @@ The anon key is safe to ship in the website; Row Level Security in `schema.sql` 
    `https://galantoren.github.io/lulu/`.
 3. On iPhone open the link in Safari → Share → **Add to Home Screen**.
 
+## Import history from Nara (or another tracker)
+
+More → Profile → **Import history (CSV / Excel)**. Pick one or more `.csv` / `.xlsx` files exported from your old app.
+Lulu guesses which column is the type, start/end time, duration, amount, side and notes (English or Hebrew headers),
+shows a preview with counts per category, and lets you fix any column before importing. Importing the same file
+again doesn't create duplicates.
+
 ## Branches
 
 - `main` — what's live on the website.

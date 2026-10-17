@@ -3,6 +3,7 @@ import { AppProvider, useApp } from "./state/AppContext";
 import { Dock, TabBar, type Tab } from "./components/Chrome";
 import { EventSheet } from "./sheets/EventSheet";
 import { BabyEditSheet, BabyPickerSheet } from "./sheets/BabySheets";
+import { ImportSheet } from "./sheets/ImportSheet";
 import { Login, Onboarding } from "./screens/Onboarding";
 import { Today } from "./screens/Today";
 import { History } from "./screens/History";
@@ -31,6 +32,7 @@ function Shell() {
       {sheet?.kind === "event" && <EventSheet key={sheet.event.id} initial={sheet.event} isNew={sheet.isNew} onClose={close} />}
       {sheet?.kind === "baby" && <BabyEditSheet baby={sheet.baby} onClose={close} />}
       {sheet?.kind === "babies" && <BabyPickerSheet onClose={close} />}
+      {sheet?.kind === "import" && <ImportSheet onClose={close} />}
     </div>
   );
 }
