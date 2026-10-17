@@ -183,10 +183,13 @@ function supabaseBackend(sb: SupabaseClient): Backend {
       return must(await sb.rpc("join_family", { code: code.trim().toUpperCase() }).single()) as Family;
     },
     async getMembers(familyId) {
-      const rows = must(
-        await sb.from("family_members").select("user_id, profiles(display_name)").eq("family_id", familyId),
-      ) as unknown as { user_id: string; profiles: { display_name: string } | null }[];
-      return rows.map((r) => ({ user_id: r.user_id, display_name: r.profiles?.display_name ?? "" }));
+      // Two plain queries: family_members has no foreign key to profiles, so it can't be embedded.
+      const rows = must(await sb.from("family_members").select("user_id").eq("family_id", familyId)) as { user_id: string }[];
+      const ids = rows.map((r) => r.user_id);
+      const profiles = ids.length
+        ? (must(await sb.from("profiles").select("id,display_name").in("id", ids)) as { id: string; display_name: string }[])
+        : [];
+      return ids.map((id) => ({ user_id: id, display_name: profiles.find((p) => p.id === id)?.display_name ?? "" }));
     },
     async listBabies(familyId) {
       return must(await sb.from("babies").select("id,family_id,name,birth_date,sex").eq("family_id", familyId).order("created_at")) as Baby[];
@@ -236,8 +239,24 @@ function supabaseBackend(sb: SupabaseClient): Backend {
   };
 }
 
-const url = import.meta.env.VITE_SUPABASE_URL as string | undefined;
-const key = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
+/**
+ * Accepts the Project URL however it was pasted: with /rest/v1/, a trailing slash,
+ * spaces, or even the dashboard link — supabase-js needs just https://<ref>.supabase.co.
+ */
+export function normalizeSupabaseUrl(raw: string | undefined): string | undefined {
+  const v = raw?.trim();
+  if (!v) return undefined;
+  const ref = v.match(/supabase\.com\/dashboard\/project\/([a-z0-9]+)/i)?.[1];
+  if (ref) return `https://${ref}.supabase.co`;
+  try {
+    return new URL(v.includes("://") ? v : `https://${v}`).origin;
+  } catch {
+    return v;
+  }
+}
+
+const url = normalizeSupabaseUrl(import.meta.env.VITE_SUPABASE_URL as string | undefined);
+const key = (import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined)?.trim();
 
 export const backend: Backend =
   url && key ? supabaseBackend(createClient(url, key, { auth: { persistSession: true, detectSessionInUrl: true } })) : localBackend();
