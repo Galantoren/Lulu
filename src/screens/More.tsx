@@ -3,6 +3,7 @@ import { useApp } from "../state/AppContext";
 import { Seg, Switch } from "../components/Sheet";
 import { ShareInvite } from "./Onboarding";
 import { BabyAvatar } from "../components/BabyAvatar";
+import { BUILD } from "../components/ErrorBoundary";
 import { backend } from "../lib/backend";
 import { ageLabel } from "../lib/age";
 
@@ -105,6 +106,8 @@ export function More() {
         </div>
         {!cloud && <div className="group-foot">{t("onDeviceNote")}</div>}
       </section>
+
+      <p className="t-caption num" style={{ textAlign: "center", margin: 0 }}>Lulu · {BUILD}</p>
 
       {cloud && (
         <div className="group">

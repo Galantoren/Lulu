@@ -283,7 +283,7 @@ button.chip[aria-pressed="false"] { background: var(--fill); }
 @media (max-width: 360px) { .quick .circle { width: 56px; height: 56px; } }
 
 
-.since { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.since { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; }
 .since .card { min-height: 104px; display: flex; flex-direction: column; gap: 6px; text-align: start; }
 .since .head { display: flex; align-items: center; gap: 6px; color: var(--label-2); font-size: 0.9375rem; }
 .since .head svg { color: var(--cat); }
@@ -544,3 +544,24 @@ button.chip[aria-pressed="false"] { background: var(--fill); }
   display: grid; place-items: center; background: var(--surface); color: var(--c-sleep); border: 1px solid var(--separator);
 }
 .baby-photo-actions { display: flex; gap: 12px; }
+
+/* Fresh vs stale "since" cards */
+.since .card { position: relative; transition: opacity 0.3s; }
+.since .card.stale { opacity: 0.5; }
+.since .card.stale:not(.med-card) .val { font-weight: 600; }
+.med-item.stale-line { opacity: 0.55; }
+.med-card.stale .med-item.stale-line { opacity: 1; }
+.eraser {
+  position: absolute; inset-block-end: 6px; inset-inline-end: 6px; width: 30px; height: 30px; border-radius: 50%;
+  display: grid; place-items: center; color: var(--label-3); opacity: 0.7;
+}
+.eraser:active { background: var(--fill); opacity: 1; }
+.sg-tools { display: flex; align-items: center; gap: 10px; font-size: 0.8125rem; color: var(--label-2); }
+.sg-key { display: inline-flex; align-items: center; gap: 5px; }
+.sg-key i { width: 9px; height: 9px; border-radius: 3px; display: inline-block; }
+.sg-filter {
+  position: relative; width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center;
+  color: var(--label-2); background: var(--fill); margin-inline-start: 2px;
+}
+.sg-filter .filter-dot { inset-block-start: 3px; inset-inline-end: 3px; }
+.since .head svg { flex: none; }
