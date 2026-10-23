@@ -9,6 +9,9 @@ export interface DeviceSettings {
   lastBrand: string;
   /** Language chosen before signing in; the profile's language wins once it exists. */
   language: "en" | "he" | null;
+  /** History filters: categories or subtypes hidden, and subtypes drawn with a gradient stroke. */
+  historyHidden: string[];
+  historyHighlight: string[];
 }
 
 const KEY = "lulu:device";
@@ -21,6 +24,8 @@ const defaults: DeviceSettings = {
   lastMilkType: "formula",
   lastBrand: "",
   language: null,
+  historyHidden: [],
+  historyHighlight: ["dirty", "mixed"],
 };
 
 export function loadSettings(): DeviceSettings {

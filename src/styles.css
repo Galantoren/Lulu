@@ -53,6 +53,9 @@
   --sg-awake-line: #f2a27a;
   --sg-sun: #f0a35e;
   --sg-sun-text: #b8692a;
+  --wk-night: #a9a3ee;
+  --wk-nap: #cfc6f6;
+  --wk-night-band: rgba(123, 116, 224, 0.07);
 
   --radius-card: 20px;
   --radius-group: 12px;
@@ -96,6 +99,9 @@
   --sg-awake-line: #f2a77a;
   --sg-sun: #f5b06e;
   --sg-sun-text: #f5b06e;
+  --wk-night: #6d66c9;
+  --wk-nap: #8d80d6;
+  --wk-night-band: rgba(140, 130, 255, 0.08);
   --wash: radial-gradient(120% 55% at 0% 0%, #23204a 0%, transparent 60%),
     radial-gradient(90% 45% at 100% 6%, #2e1f2a 0%, transparent 60%), #0e0d14;
   color-scheme: dark;
@@ -477,3 +483,53 @@ button.chip[aria-pressed="false"] { background: var(--fill); }
 .sg-svg .arc { cursor: pointer; }
 .sg-pulse { transform-box: fill-box; transform-origin: center; animation: sgpulse 2s ease-in-out infinite; }
 @keyframes sgpulse { 50% { transform: scale(1.6); opacity: 0.05; } }
+
+/* Small header controls */
+.theme-toggle {
+  width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; color: var(--label-2);
+  background: color-mix(in srgb, var(--surface) 60%, transparent); border: 1px solid var(--separator);
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+}
+.filter-btn {
+  display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 14px; border-radius: 999px; position: relative;
+  background: var(--surface); border: 1px solid var(--separator); font-size: 0.9375rem; font-weight: 500;
+}
+.filter-dot { position: absolute; inset-block-start: 4px; inset-inline-end: 6px; width: 7px; height: 7px; border-radius: 50%; background: var(--c-sleep); }
+.filter-subs { padding: 0 16px 12px 58px; padding-inline: 58px 16px; }
+
+/* ------------------------------------------------------------------ */
+/* History week grid                                                   */
+/* ------------------------------------------------------------------ */
+.wk { padding: 8px 8px 10px; }
+.wk-head { display: grid; grid-template-columns: 34px repeat(7, 1fr) 28px; align-items: center; gap: 3px; margin-bottom: 6px; }
+.wk-nav { height: 44px; display: grid; place-items: center; color: var(--label-2); border-radius: 10px; }
+.wk-nav:disabled { opacity: 0.25; }
+.wk-day { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 0; border-radius: 12px; font-size: 0.6875rem; color: var(--label-2); }
+.wk-day b { font-size: 1rem; color: var(--label); font-weight: 600; }
+.wk-day.today { background: color-mix(in srgb, var(--c-sleep) 16%, var(--surface)); }
+.wk-day.today b { color: var(--c-sleep); }
+.wk-body { position: relative; margin-inline-end: 28px; }
+.wk-night { position: absolute; inset-inline: 0; background: var(--wk-night-band); border-radius: 8px; pointer-events: none; }
+.wk-hour { position: absolute; inset-inline: 34px 0; border-top: 1px dashed var(--separator); pointer-events: none; }
+.wk-hour.minor { border-top-style: dotted; opacity: 0.6; }
+.wk-hour span { position: absolute; inset-inline-start: -34px; width: 30px; transform: translateY(-50%); font-size: 0.625rem; color: var(--label-2); text-align: end; }
+.wk-hour:first-child span { transform: none; }
+.wk-cols { position: absolute; inset: 0; inset-inline-start: 37px; display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
+.wk-col { position: relative; border-radius: 8px; background: color-mix(in srgb, var(--fill) 55%, transparent); }
+.wk-col.today { background: color-mix(in srgb, var(--c-sleep) 9%, transparent); }
+.wk-ev { position: absolute; inset-inline: 0; padding: 0; background: var(--fill); }
+.wk-ev.sleep { background: var(--fill); border-radius: 6px; min-height: 3px; z-index: 1; }
+.wk-ev.bar { inset-inline: 2px; height: 5px; border-radius: 3px; z-index: 2; background: var(--fill); }
+.wk-ev.mark { inset-inline: 5px; height: 4px; border-radius: 2px; z-index: 3; background: var(--fill); }
+/* Gradient stroke: keeps the category fill, outlines it with category → accent */
+.wk-ev.hl, .hl-swatch.hl {
+  border: 2px solid transparent;
+  background: linear-gradient(var(--fill), var(--fill)) padding-box, linear-gradient(90deg, var(--c1), var(--c2)) border-box;
+}
+.wk-ev.mark.hl { height: 8px; inset-inline: 3px; border-radius: 4px; }
+.wk-ev.bar.hl { min-height: 8px; }
+.wk-ev.sleep.hl { border-width: 2.5px; }
+.wk-now { position: absolute; inset-inline: -2px; height: 2px; background: var(--c-sleep); z-index: 4; pointer-events: none; }
+.wk-now i { position: absolute; inset-inline-start: -4px; top: -3px; width: 8px; height: 8px; border-radius: 50%; background: var(--c-sleep); }
+.wk-foot { text-align: center; margin-top: 8px; }
+.hl-swatch { width: 34px; height: 12px; border-radius: 4px; flex: none; background: var(--fill); }

@@ -52,7 +52,10 @@ const en = {
   stillRunningLabel: "Timer running",
   newEntry: "New entry",
   // history
-  day: "Day", week: "Week", monthTab: "Month", sleepPerDay: "Sleep per day (hours)", avg: "avg",
+  day: "Day", week: "Week", monthTab: "Month",
+  filters: "Filters", show: "Show", highlightTitle: "Highlight with a gradient stroke",
+  highlightFoot: "Highlighted entries get a gradient outline inside their colour, so they stand out in the week view.",
+  tapDay: "tap a day for details", backToWeek: "Week", sleepPerDay: "Sleep per day (hours)", avg: "avg",
   emptyHistory: "Log a few days to see patterns appear.",
   vsLastWeek: "{diff} per day vs last week",
   // health
@@ -166,7 +169,10 @@ const he: Record<TKey, string> = {
   doseFooter: "תמיד יש לפעול לפי הוראות המינון של רופא/ת הילדים או הרוקח/ת.",
   stillRunningLabel: "טיימר פועל",
   newEntry: "רשומה חדשה",
-  day: "יום", week: "שבוע", monthTab: "חודש", sleepPerDay: "שינה ליום (שעות)", avg: "ממוצע",
+  day: "יום", week: "שבוע", monthTab: "חודש",
+  filters: "סינון", show: "הצגה", highlightTitle: "הדגשה במסגרת מדורגת",
+  highlightFoot: "רשומות מודגשות מקבלות מסגרת בצבע מדורג בתוך הצבע שלהן, כדי לבלוט בתצוגת השבוע.",
+  tapDay: "הקישו על יום לפרטים", backToWeek: "שבוע", sleepPerDay: "שינה ליום (שעות)", avg: "ממוצע",
   emptyHistory: "רשמו כמה ימים כדי לראות דפוסים.",
   vsLastWeek: "{diff} ליום לעומת שבוע שעבר",
   giveMedicine: "מתן תרופה", logTemp: "רישום חום", logGrowth: "רישום גדילה",

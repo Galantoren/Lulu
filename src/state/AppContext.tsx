@@ -18,6 +18,7 @@ export type SheetState =
   | { kind: "baby"; baby: Baby | null }
   | { kind: "babies" }
   | { kind: "import" }
+  | { kind: "filters" }
   | null;
 
 type Phase = "loading" | "login" | "onboarding" | "ready";
