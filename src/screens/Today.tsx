@@ -4,6 +4,7 @@ import { useApp, useNow } from "../state/AppContext";
 import { CATEGORY_ICON, CATEGORY_ORDER, LONG_RUNNING_HOURS, catVar, suggestMeal, suggestSleepType } from "../lib/categories";
 import { SleepGraph } from "../components/SleepGraph";
 import { ThemeToggle } from "../components/ThemeToggle";
+import { BabyAvatar } from "../components/BabyAvatar";
 import { EventLog } from "../components/EventLog";
 import { ageLabel } from "../lib/age";
 import { dayStats, eventTitle, longestNight } from "../lib/summary";
@@ -103,7 +104,7 @@ export function Today() {
             <ThemeToggle />
           </div>
           <button className="baby-chip press" onClick={() => openSheet({ kind: "babies" })}>
-            <span className="avatar">{baby.name.slice(0, 1).toUpperCase()}</span>
+            <BabyAvatar baby={baby} />
             <span>
               <div className="t-headline">{baby.name}</div>
               <div className="t-sub">{ageLabel(baby.birth_date, t)}</div>

@@ -2,6 +2,7 @@ import { ChevronRight, Cloud, FileUp, Plus, Smartphone } from "lucide-react";
 import { useApp } from "../state/AppContext";
 import { Seg, Switch } from "../components/Sheet";
 import { ShareInvite } from "./Onboarding";
+import { BabyAvatar } from "../components/BabyAvatar";
 import { backend } from "../lib/backend";
 import { ageLabel } from "../lib/age";
 
@@ -44,7 +45,7 @@ export function More() {
         <div className="group">
           {babies.map((b) => (
             <button key={b.id} className="row press" onClick={() => openSheet({ kind: "baby", baby: b })}>
-              <span className="avatar" style={{ width: 32, height: 32, fontSize: 14 }}>{b.name.slice(0, 1).toUpperCase()}</span>
+              <BabyAvatar baby={b} size={36} />
               <span className="grow">{b.name}<div className="t-foot">{ageLabel(b.birth_date, t)}</div></span>
               <Chevron />
             </button>

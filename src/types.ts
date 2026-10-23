@@ -71,6 +71,7 @@ export interface Baby {
   name: string;
   birth_date: string | null; // yyyy-mm-dd
   sex: "female" | "male" | null;
+  photo_path?: string | null;
 }
 
 export interface Profile {
