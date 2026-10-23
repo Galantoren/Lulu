@@ -1,19 +1,21 @@
-import { Moon, Sun, Sunrise } from "lucide-react";
+import { Moon, SlidersHorizontal, Sun, Sunrise } from "lucide-react";
 import { useApp } from "../state/AppContext";
+import { ACCENT, isVisible } from "./WeekGrid";
+import { CATEGORY_ICON, catVar } from "../lib/categories";
 import { DAY, HOUR, fmtClock, fmtDuration, startOfDay } from "../lib/time";
-import type { BabyEvent } from "../types";
+import type { BabyEvent, Category } from "../types";
 
 // Chart geometry (SVG user units; the SVG scales to the card width).
 const W = 340;
-const X0 = 14;
-const X1 = W - 14;
+const START = 24; // room for the lane icons at the start side
+const END = 10;
 const Y_AWAKE = 50;
 const Y_ASLEEP = 112;
-const Y_DOTS = 134;
-const Y_LABELS = 156;
-const H = 166;
+const LANE0 = 132; // first row of dots under the graph
+const LANE_H = 13;
 const NIGHT_START = 19; // hours shaded as night: 19:00–24:00 and 00:00–07:00
 const NIGHT_END = 7;
+const LANES: Category[] = ["feeding", "diaper", "pumping", "health"];
 
 interface Seg {
   e: BabyEvent;
@@ -27,8 +29,11 @@ interface Seg {
  * Time flows in the reading direction (right-to-left in Hebrew).
  */
 export function SleepGraph({ events, now, day = new Date() }: { events: BabyEvent[]; now: number; day?: Date }) {
-  const { t, lang, profile, openSheet } = useApp();
+  const { t, lang, profile, settings, openSheet } = useApp();
   const rtl = lang === "he";
+  const X0 = rtl ? END : START;
+  const X1 = rtl ? W - START : W - END;
+  const iconX = rtl ? W - START + 6 : 4;
   const fmt = profile?.time_format ?? "24h";
   const dayStart = startOfDay(day).getTime();
   const dayEnd = dayStart + DAY;
@@ -49,7 +54,6 @@ export function SleepGraph({ events, now, day = new Date() }: { events: BabyEven
     .filter((g) => g.en > g.s)
     .sort((a, b) => a.s - b.s);
   const totalMs = segs.reduce((sum, g) => sum + (g.en - g.s), 0);
-  const nightMs = segs.filter((g) => g.e.subtype === "night").reduce((sum, g) => sum + (g.en - g.s), 0);
 
   // The step line: awake → drop at each sleep start → asleep → rise at its end.
   let d = `M ${x(dayStart)} ${Y_AWAKE}`;
@@ -64,7 +68,13 @@ export function SleepGraph({ events, now, day = new Date() }: { events: BabyEven
     .filter((ms) => ms >= dayStart + 4 * HOUR && ms <= dayStart + 12 * HOUR)
     .pop();
 
-  const marks = events.filter((e) => e.category !== "sleep" && new Date(e.started_at).getTime() >= dayStart && new Date(e.started_at).getTime() < dayEnd);
+  // Other entries, one row per category, following the shared filters.
+  const marks = events.filter((e) => e.category !== "sleep" && isVisible(e, settings.historyHidden)
+    && new Date(e.started_at).getTime() >= dayStart && new Date(e.started_at).getTime() < dayEnd);
+  const lanes = LANES.filter((c) => !settings.historyHidden.includes(c));
+  const laneY = (c: Category) => LANE0 + lanes.indexOf(c) * LANE_H;
+  const yLabels = LANE0 + lanes.length * LANE_H + 8;
+  const H = yLabels + 10;
   const open = (e: BabyEvent) => openSheet({ kind: "event", event: e, isNew: false });
   const nights = [span(dayStart, dayStart + NIGHT_END * HOUR), span(dayStart + NIGHT_START * HOUR, dayEnd)];
 
@@ -75,9 +85,13 @@ export function SleepGraph({ events, now, day = new Date() }: { events: BabyEven
           <div className="t-sub">{t("totalSleepToday")}</div>
           <div className="t-title1 num" style={{ lineHeight: 1.1 }}>{fmtDuration(totalMs, lang)}</div>
         </div>
-        <div className="sg-legend">
-          <span><i style={{ background: "var(--sg-night)" }} />{t("night")} <b className="num">{fmtDuration(nightMs, lang)}</b></span>
-          <span><i style={{ background: "var(--sg-nap)" }} />{t("naps")} <b className="num">{fmtDuration(totalMs - nightMs, lang)}</b></span>
+        <div className="sg-tools">
+          <span className="sg-key"><i style={{ background: "var(--sg-night)" }} />{t("night")}</span>
+          <span className="sg-key"><i style={{ background: "var(--sg-nap)" }} />{t("nap")}</span>
+          <button className="sg-filter press" aria-label={t("filters")} onClick={() => openSheet({ kind: "filters" })}>
+            <SlidersHorizontal size={15} />
+            {settings.historyHidden.length > 0 && <span className="filter-dot" />}
+          </button>
         </div>
       </div>
 
@@ -95,6 +109,12 @@ export function SleepGraph({ events, now, day = new Date() }: { events: BabyEven
             <stop offset="0" stopColor="var(--sg-nap)" stopOpacity="0.15" />
             <stop offset="1" stopColor="var(--sg-nap)" stopOpacity="0.8" />
           </linearGradient>
+          {LANES.map((c) => (
+            <linearGradient key={c} id={`sg-hl-${c}`} x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stopColor={catVar(c)} />
+              <stop offset="1" stopColor={ACCENT[c]} />
+            </linearGradient>
+          ))}
           <linearGradient id="sg-line" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0" stopColor="var(--sg-awake-line)" />
             <stop offset="1" stopColor="var(--sg-night)" />
@@ -114,7 +134,7 @@ export function SleepGraph({ events, now, day = new Date() }: { events: BabyEven
           <line key={h} x1={xh(h)} x2={xh(h)} y1={36} y2={Y_ASLEEP + 6} stroke="var(--separator)" strokeWidth={h % 6 ? 0.5 : 0.8} strokeDasharray={h % 6 ? "2 3" : undefined} />
         ))}
         {[0, 6, 12, 18, 24].map((h) => (
-          <text key={h} x={xh(h)} y={Y_LABELS} textAnchor="middle" fontSize="10" fill="var(--label-2)" className="num">
+          <text key={h} x={xh(h)} y={yLabels} textAnchor="middle" fontSize="10" fill="var(--label-2)" className="num">
             {String(h % 24 === 0 && h ? 24 : h).padStart(2, "0")}
           </text>
         ))}
@@ -153,18 +173,32 @@ export function SleepGraph({ events, now, day = new Date() }: { events: BabyEven
           </g>
         )}
 
-        {/* Feeds, diapers, pumping, health */}
-        {marks.map((e) => (
-          <circle key={e.id} className="arc" cx={x(new Date(e.started_at).getTime())} cy={Y_DOTS} r={e.category === "feeding" ? 4.5 : 3.5}
-            fill={`var(--c-${e.category})`} stroke="var(--surface)" strokeWidth={1.2} onClick={() => open(e)}>
-            <title>{t(e.subtype)}</title>
-          </circle>
-        ))}
+        {/* One row of dots per category, with a small icon at the start */}
+        {lanes.map((c) => {
+          const Icon = CATEGORY_ICON[c];
+          return (
+            <g key={c}>
+              <line x1={X0} x2={X1} y1={laneY(c)} y2={laneY(c)} stroke={catVar(c)} strokeOpacity={0.18} strokeWidth={1} strokeDasharray="1 4" strokeLinecap="round" />
+              <Icon x={iconX} y={laneY(c) - 6} width={12} height={12} color={catVar(c)} strokeWidth={2.2} />
+            </g>
+          );
+        })}
+        {marks.map((e) => {
+          const hl = settings.historyHighlight.includes(e.subtype);
+          const cx = x(new Date(e.started_at).getTime());
+          return (
+            <circle key={e.id} className="arc" cx={cx} cy={laneY(e.category)} r={hl ? 5 : 4}
+              fill={`var(--c-${e.category})`} stroke={hl ? `url(#sg-hl-${e.category})` : "var(--surface)"} strokeWidth={hl ? 2.5 : 1.2}
+              onClick={() => open(e)}>
+              <title>{t(e.subtype)}</title>
+            </circle>
+          );
+        })}
 
         {/* Now */}
         {isToday && (
           <g>
-            <line x1={x(now)} x2={x(now)} y1={36} y2={Y_DOTS + 6} stroke="var(--label)" strokeOpacity={0.35} strokeWidth={1} />
+            <line x1={x(now)} x2={x(now)} y1={36} y2={yLabels - 8} stroke="var(--label)" strokeOpacity={0.35} strokeWidth={1} />
             <circle cx={x(now)} cy={sleepingNow ? Y_ASLEEP : Y_AWAKE} r={9} fill={sleepingNow ? "var(--sg-night)" : "var(--sg-awake-line)"} opacity={0.2} className="sg-pulse" />
             <circle cx={x(now)} cy={sleepingNow ? Y_ASLEEP : Y_AWAKE} r={4.5} fill={sleepingNow ? "var(--sg-night)" : "var(--sg-awake-line)"} stroke="var(--surface)" strokeWidth={2} />
           </g>

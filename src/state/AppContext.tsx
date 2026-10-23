@@ -183,11 +183,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const saveBaby = useCallback(
     async (b: Baby) => {
+      const before = babies;
       setBabies((bs) => [...bs.filter((x) => x.id !== b.id), b]);
       setSettings({ activeBabyId: b.id });
-      await backend.saveBaby(b);
+      try {
+        await backend.saveBaby(b);
+      } catch (err) {
+        setBabies(before);
+        throw err;
+      }
     },
-    [setSettings],
+    [babies, setSettings],
   );
 
   const newEvent = useCallback(

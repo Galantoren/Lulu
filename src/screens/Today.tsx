@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
-import { AlertCircle, HeartPulse, Moon, Pill, Sun, Thermometer } from "lucide-react";
+import { AlertCircle, Eraser, HeartPulse, Moon, Pill, Sun, Thermometer } from "lucide-react";
 import { useApp, useNow } from "../state/AppContext";
 import { CATEGORY_ICON, CATEGORY_ORDER, LONG_RUNNING_HOURS, catVar, suggestMeal, suggestSleepType } from "../lib/categories";
 import { SleepGraph } from "../components/SleepGraph";
 import { ThemeToggle } from "../components/ThemeToggle";
+import { BabyAvatar } from "../components/BabyAvatar";
 import { EventLog } from "../components/EventLog";
 import { ageLabel } from "../lib/age";
 import { dayStats, eventTitle, longestNight } from "../lib/summary";
@@ -14,7 +15,7 @@ import type { TKey } from "../i18n";
 
 export function Today() {
   const app = useApp();
-  const { t, lang, baby, events, settings, profile, startTimer, stopEvent, saveEvent, newEvent, openSheet, showToast } = app;
+  const { t, lang, baby, events, settings, setSettings, profile, startTimer, stopEvent, saveEvent, newEvent, openSheet, showToast } = app;
   const now = useNow(1000);
   const [scrolled, setScrolled] = useState(false);
   useEffect(() => {
@@ -89,9 +90,17 @@ export function Today() {
     { c: "diaper", title: "lastDiaper", e: last("diaper") },
     { c: "pumping", title: "lastPump", e: last("pumping") },
   ];
-  const lastMed = events.find((e) => e.subtype === "medicine");
-  const lastTemp = events.find((e) => e.subtype === "temperature");
-  const fever = (lastTemp?.data.celsius ?? 0) >= 38;
+  // Entries older than this are "stale": their cards fade so fresh information stands out.
+  const isStale = (e?: BabyEvent) => !e || (!!e.ended_at && now - new Date(e.ended_at).getTime() > 24 * HOUR);
+  // The eraser hides older medicine/temperature from the card (the entries stay in History).
+  const clearedAt = settings.healthClearedAt[baby.id] ?? "";
+  const lastMed = events.find((e) => e.subtype === "medicine" && e.started_at > clearedAt);
+  const lastTemp = events.find((e) => e.subtype === "temperature" && e.started_at > clearedAt);
+  const eraseHealth = () => {
+    const prev = settings.healthClearedAt;
+    setSettings({ healthClearedAt: { ...prev, [baby.id]: new Date().toISOString() } });
+    showToast({ text: t("cleared"), action: { label: t("undo"), run: () => setSettings({ healthClearedAt: prev }) } });
+  };
 
   return (
     <>
@@ -103,7 +112,7 @@ export function Today() {
             <ThemeToggle />
           </div>
           <button className="baby-chip press" onClick={() => openSheet({ kind: "babies" })}>
-            <span className="avatar">{baby.name.slice(0, 1).toUpperCase()}</span>
+            <BabyAvatar baby={baby} />
             <span>
               <div className="t-headline">{baby.name}</div>
               <div className="t-sub">{ageLabel(baby.birth_date, t)}</div>
@@ -177,7 +186,7 @@ export function Today() {
           {sinceCards.map(({ c, title, e, extra }) => {
             const Icon = CATEGORY_ICON[c];
             return (
-              <button key={c} className="card tinted press" style={{ ["--cat" as string]: catVar(c) }}
+              <button key={c} className={`card tinted press ${isStale(e) ? "stale" : ""}`} style={{ ["--cat" as string]: catVar(c) }}
                 onClick={() => (e ? openSheet({ kind: "event", event: e, isNew: false }) : quick(c))}>
                 <div className="head"><Icon size={18} />{t(title)}</div>
                 <div className="val num">{ago(e)}</div>
@@ -187,32 +196,26 @@ export function Today() {
             );
           })}
           {/* Medicine and temperature share a card, each with its own time */}
-          <button className="card tinted press" style={{ ["--cat" as string]: catVar("health") }}
+          <div role="button" tabIndex={0} className={`card tinted press med-card ${isStale(lastMed) && isStale(lastTemp) ? "stale" : ""}`}
+            style={{ ["--cat" as string]: catVar("health") }}
             onClick={() => openSheet({ kind: "event", event: newEvent("health", "medicine", { unit: "ml" }), isNew: true })}>
             <div className="head" style={{ whiteSpace: "nowrap" }}><HeartPulse size={18} />{t("medTemp")}</div>
-            <div className="med-item">
+            {(lastMed || lastTemp) && (
+              <button className="eraser" aria-label={t("clearCard")} onClick={(ev) => { ev.stopPropagation(); eraseHealth(); }}>
+                <Eraser size={15} />
+              </button>
+            )}
+            <div className={`med-item ${isStale(lastMed) ? "stale-line" : ""}`}>
               <div className="med-line"><Pill size={15} /><span className="num">{lastMed ? ago(lastMed) : "—"}</span></div>
               {lastMed && <div className="t-foot ellipsis">{eventTitle(lastMed, t, lang, now)}</div>}
             </div>
-            <div className="med-item">
-              <div className="med-line" style={{ color: fever ? "var(--amber)" : undefined }}>
+            <div className={`med-item ${isStale(lastTemp) ? "stale-line" : ""}`}>
+              <div className="med-line" style={{ color: (lastTemp?.data.celsius ?? 0) >= 38 ? "var(--amber)" : undefined }}>
                 <Thermometer size={15} /><span className="num">{lastTemp?.data.celsius ? `${lastTemp.data.celsius.toFixed(1)} °C` : "—"}</span>
               </div>
               {lastTemp && <div className="t-foot num">{ago(lastTemp)}</div>}
             </div>
-          </button>
-        </div>
-
-        <div className="chips">
-          <span className="chip" style={{ ["--cat" as string]: catVar("sleep") }}><span className="dot" />{t("sleep")} <b>{fmtDuration(stats.sleepMs, lang)}</b></span>
-          <span className="chip" style={{ ["--cat" as string]: catVar("feeding") }}><span className="dot" />{t("feeds")} <b>{stats.feeds}</b>
-            {stats.bottleMl > 0 && <span className="num">· {stats.bottleMl} ml</span>}
-            {stats.breastMin > 0 && <span className="num">· {stats.breastMin} {t("minutes")}</span>}
-          </span>
-          <span className="chip" style={{ ["--cat" as string]: catVar("diaper") }}><span className="dot" />{t("diapers")} <b>{stats.diapers}</b>
-            {stats.diapers > 0 && <span className="num">· {stats.wet}💧 {stats.dirty}💩</span>}
-          </span>
-          <span className="chip" style={{ ["--cat" as string]: catVar("pumping") }}><span className="dot" />{t("pumped")} <b>{stats.pumpedMl} ml</b></span>
+          </div>
         </div>
 
         <h2 className="section-title">{t("todaysLog")}</h2>

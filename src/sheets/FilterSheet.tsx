@@ -26,6 +26,7 @@ export function FilterSheet({ onClose }: { onClose: () => void }) {
 
   return (
     <Sheet title={t("filters")} onClose={onClose} cancelLabel={t("done")}>
+      <p className="t-foot" style={{ margin: 0 }}>{t("filtersFoot")}</p>
       <section>
         <div className="group-label">{t("show")}</div>
         <div className="group">

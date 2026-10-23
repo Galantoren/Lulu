@@ -32,8 +32,10 @@ create table if not exists babies (
   name text not null,
   birth_date date,
   sex text check (sex in ('female', 'male')),
+  photo_path text,
   created_at timestamptz not null default now()
 );
+alter table babies add column if not exists photo_path text;
 
 create table if not exists events (
   id uuid primary key default gen_random_uuid(),

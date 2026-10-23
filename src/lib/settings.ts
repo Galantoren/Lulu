@@ -12,6 +12,8 @@ export interface DeviceSettings {
   /** History filters: categories or subtypes hidden, and subtypes drawn with a gradient stroke. */
   historyHidden: string[];
   historyHighlight: string[];
+  /** Per baby: medicine/temperature before this time are hidden from the Today card (eraser). */
+  healthClearedAt: Record<string, string>;
 }
 
 const KEY = "lulu:device";
@@ -26,6 +28,7 @@ const defaults: DeviceSettings = {
   language: null,
   historyHidden: [],
   historyHighlight: ["dirty", "mixed"],
+  healthClearedAt: {},
 };
 
 export function loadSettings(): DeviceSettings {

@@ -1,5 +1,6 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { Baby, BabyEvent, Family, Member, Profile } from "../types";
+import { authStorage } from "./authStorage";
 
 export interface User {
   id: string;
@@ -209,10 +210,14 @@ function supabaseBackend(sb: SupabaseClient): Backend {
       return ids.map((id) => ({ user_id: id, display_name: profiles.find((p) => p.id === id)?.display_name ?? "" }));
     },
     async listBabies(familyId) {
-      return must(await sb.from("babies").select("id,family_id,name,birth_date,sex").eq("family_id", familyId).order("created_at")) as Baby[];
+      return must(await sb.from("babies").select("*").eq("family_id", familyId).order("created_at")) as Baby[];
     },
     async saveBaby(b) {
-      must(await sb.from("babies").upsert(b));
+      const { error } = await sb.from("babies").upsert(b);
+      if (error?.message.includes("photo_path")) {
+        throw new Error("Baby photos need one database update: in Supabase SQL Editor run  alter table babies add column if not exists photo_path text;");
+      }
+      if (error) throw new Error(error.message);
     },
     async listEvents(babyId, sinceISO) {
       return must(
@@ -276,4 +281,4 @@ const url = normalizeSupabaseUrl(import.meta.env.VITE_SUPABASE_URL as string | u
 const key = (import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined)?.trim();
 
 export const backend: Backend =
-  url && key ? supabaseBackend(createClient(url, key, { auth: { persistSession: true, detectSessionInUrl: true } })) : localBackend();
+  url && key ? supabaseBackend(createClient(url, key, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, storage: authStorage } })) : localBackend();
