@@ -16,7 +16,10 @@ function Shell() {
   const { phase, sheet, openSheet, events } = useApp();
   const runningCount = events.filter((e) => !e.ended_at).length;
   const [tab, setTab] = useState<Tab>("today");
-  useEffect(() => window.scrollTo(0, 0), [tab]);
+  // Braces matter: newer browsers return a Promise from scrollTo, which React would call as a cleanup.
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [tab]);
   const close = () => openSheet(null);
 
   if (phase === "loading") return <div className="screen" aria-busy="true" />;
