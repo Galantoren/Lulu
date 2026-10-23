@@ -140,7 +140,8 @@ function localBackend(): Backend {
 /* ------------------------------------------------------------------ */
 
 function supabaseBackend(sb: SupabaseClient): Backend {
-  const uid = async () => (await sb.auth.getUser()).data.user?.id ?? null;
+  // The signed-in user's id from the stored session (no extra network call that could race a fresh sign-in).
+  const uid = async () => (await sb.auth.getSession()).data.session?.user.id ?? null;
   const must = <T,>(r: { data: T; error: { message: string } | null }): T => {
     if (r.error) throw new Error(r.error.message);
     return r.data;
@@ -155,7 +156,11 @@ function supabaseBackend(sb: SupabaseClient): Backend {
       return u ? { id: u.id, email: u.email ?? null } : null;
     },
     onAuthChange(cb) {
-      const { data } = sb.auth.onAuthStateChange(() => cb());
+      // Only real sign-in changes reload the account (not hourly token refreshes). Deferred, as Supabase
+      // recommends: calling auth methods inside this callback can collide with the sign-in still finishing.
+      const { data } = sb.auth.onAuthStateChange((event) => {
+        if (event === "SIGNED_IN" || event === "SIGNED_OUT" || event === "USER_UPDATED" || event === "INITIAL_SESSION") setTimeout(cb, 0);
+      });
       return () => data.subscription.unsubscribe();
     },
     async sendLoginEmail(email) {
