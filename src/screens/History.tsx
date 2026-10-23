@@ -1,65 +1,57 @@
 import { useState } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, SlidersHorizontal } from "lucide-react";
 import { useApp, useNow } from "../state/AppContext";
-import { Seg } from "../components/Sheet";
-import { DayRing } from "../components/DayRing";
+import { SleepGraph } from "../components/SleepGraph";
 import { EventLog } from "../components/EventLog";
-import { CATEGORY_ORDER, catVar } from "../lib/categories";
+import { catVar } from "../lib/categories";
+import { WeekGrid, isVisible } from "../components/WeekGrid";
 import { dayStats } from "../lib/summary";
 import { addDays, DAY, fmtDate, fmtDuration, HOUR, overlap, sameDay, startOfDay } from "../lib/time";
-import type { BabyEvent, Category } from "../types";
-
-type Range = "day" | "week" | "month";
-const SPAN: Record<Range, number> = { day: 1, week: 7, month: 30 };
+import type { BabyEvent } from "../types";
 
 export function History() {
-  const { t, lang, events } = useApp();
+  const { t, lang, events, settings, openSheet } = useApp();
   const now = useNow(30_000);
-  const [range, setRange] = useState<Range>("day");
-  const [offset, setOffset] = useState(0); // periods back from today
-  const [filter, setFilter] = useState<Category | "all">("all");
+  const [week, setWeek] = useState(0); // weeks back from this one
+  const [day, setDay] = useState<Date | null>(null);
+  const rtl = lang === "he";
+  const Back = rtl ? ChevronRight : ChevronLeft;
 
-  const span = SPAN[range];
-  const lastDay = addDays(startOfDay(), -offset * span);
-  const days = Array.from({ length: span }, (_, i) => addDays(lastDay, -i)); // newest first
-  const shown = filter === "all" ? events : events.filter((e) => e.category === filter || e.category === "sleep");
-  const isRtl = lang === "he";
-  const Prev = isRtl ? ChevronRight : ChevronLeft;
-  const Next = isRtl ? ChevronLeft : ChevronRight;
+  const lastDay = addDays(startOfDay(), -week * 7);
+  const days = Array.from({ length: 7 }, (_, i) => addDays(lastDay, i - 6));
+  const shown = events.filter((e) => isVisible(e, settings.historyHidden));
 
-  const label = range === "day" ? fmtDate(lastDay, lang) : `${fmtDate(days[days.length - 1]!, lang)} – ${fmtDate(lastDay, lang)}`;
-
-  // Sleep per day, and the same for the period before, for a neutral comparison.
+  // Sleep per day this week vs the week before, for a neutral comparison.
   const sleepHours = (d: Date) => dayStats(events, d, now).sleepMs / HOUR;
-  const perDay = days.map((d) => ({ d, h: sleepHours(d) })).reverse();
-  const avg = perDay.reduce((a, b) => a + b.h, 0) / perDay.length;
-  const prevAvg = Array.from({ length: span }, (_, i) => sleepHours(addDays(lastDay, -span - i))).reduce((a, b) => a + b, 0) / span;
-  const hasData = events.some((e) => new Date(e.started_at) >= addDays(lastDay, -span + 1));
+  const perDay = days.map((d) => ({ d, h: sleepHours(d) }));
+  const avg = perDay.reduce((a, b) => a + b.h, 0) / 7;
+  const prevAvg = days.map((d) => sleepHours(addDays(d, -7))).reduce((a, b) => a + b, 0) / 7;
 
   return (
     <div className="screen">
-      <h1 className="t-large" style={{ margin: 0 }}>{t("history")}</h1>
-      <Seg value={range} onChange={(v) => { setRange(v); setOffset(0); }}
-        options={[{ value: "day", label: t("day") }, { value: "week", label: t("week") }, { value: "month", label: t("monthTab") }]} />
-      <div className="header" style={{ minHeight: 44 }}>
-        <button className="icon-btn" style={{ color: "var(--label)" }} aria-label="previous" onClick={() => setOffset(offset + 1)}><Prev /></button>
-        <button className="t-headline" onClick={() => setOffset(0)}>{offset === 0 && range === "day" ? t("today") : label}</button>
-        <button className="icon-btn" style={{ color: "var(--label)" }} aria-label="next" disabled={offset === 0} onClick={() => setOffset(Math.max(0, offset - 1))}><Next /></button>
+      <div className="header">
+        <h1 className="t-large" style={{ margin: 0 }}>{t("history")}</h1>
+        <button className="filter-btn press" onClick={() => openSheet({ kind: "filters" })}>
+          <SlidersHorizontal size={16} />{t("filters")}
+          {(settings.historyHidden.length > 0) && <span className="filter-dot" />}
+        </button>
       </div>
 
-      <div className="chips">
-        {(["all", ...CATEGORY_ORDER] as const).map((c) => (
-          <button key={c} className="chip" aria-pressed={filter === c} style={{ ["--cat" as string]: c === "all" ? "var(--c-sleep)" : catVar(c) }}
-            onClick={() => setFilter(c)}>{c === "all" ? t("all") : t(c)}</button>
-        ))}
-      </div>
-
-      {range === "day" ? (
-        <DayView day={lastDay} events={shown} now={now} />
-      ) : !hasData ? (
-        <div className="group"><div className="empty">{t("emptyHistory")}</div></div>
+      {day ? (
+        <>
+          <div className="header" style={{ minHeight: 44 }}>
+            <button className="link" style={{ display: "flex", alignItems: "center", gap: 2 }} onClick={() => setDay(null)}>
+              <Back size={20} />{t("backToWeek")}
+            </button>
+            <span className="t-headline">{sameDay(day, new Date()) ? t("today") : fmtDate(day, lang)}</span>
+            <span style={{ width: 60 }} />
+          </div>
+          <DayView day={day} events={shown} now={now} />
+        </>
       ) : (
         <>
+          <WeekGrid lastDay={lastDay} now={now} canNext={week > 0} onPrev={() => setWeek(week + 1)}
+            onNext={() => setWeek(Math.max(0, week - 1))} onOpenDay={setDay} />
           <div className="card">
             <div className="t-headline" style={{ marginBottom: 4 }}>{t("sleepPerDay")}</div>
             <div className="t-foot num" style={{ marginBottom: 12 }}>
@@ -67,19 +59,6 @@ export function History() {
               {prevAvg > 0 && ` · ${t("vsLastWeek", { diff: `${avg >= prevAvg ? "+" : "−"}${fmtDuration(Math.abs(avg - prevAvg) * HOUR, lang)}` })}`}
             </div>
             <SleepBars data={perDay} avg={avg} />
-          </div>
-          <div className="card">
-            <div className="pattern">
-              {days.map((d) => (
-                <button key={d.toISOString()} className="day" onClick={() => { setRange("day"); setOffset(Math.round((startOfDay().getTime() - d.getTime()) / DAY)); }}>
-                  <span className="t-caption">{fmtDate(d, lang).split(",")[0]} {range === "month" ? d.getDate() : ""}</span>
-                  <PatternRow day={d} events={shown} now={now} />
-                </button>
-              ))}
-            </div>
-            <div className="t-caption num" style={{ display: "flex", justifyContent: "space-between", marginInlineStart: 64, marginTop: 6 }}>
-              <span>00</span><span>06</span><span>12</span><span>18</span><span>24</span>
-            </div>
           </div>
         </>
       )}
@@ -97,7 +76,7 @@ function DayView({ day, events, now }: { day: Date; events: BabyEvent[]; now: nu
   });
   return (
     <>
-      <DayRing events={events} now={sameDay(day, new Date()) ? now : from + DAY} day={day} />
+      <SleepGraph events={events} now={sameDay(day, new Date()) ? now : from + DAY} day={day} />
       <div className="chips">
         <span className="chip" style={{ ["--cat" as string]: catVar("sleep") }}><span className="dot" />{t("sleep")} <b>{fmtDuration(s.sleepMs, lang)}</b></span>
         <span className="chip" style={{ ["--cat" as string]: catVar("feeding") }}><span className="dot" />{t("feeds")} <b>{s.feeds}</b>{s.bottleMl > 0 && <span className="num">· {s.bottleMl} ml</span>}</span>
@@ -106,30 +85,6 @@ function DayView({ day, events, now }: { day: Date; events: BabyEvent[]; now: nu
       </div>
       <EventLog events={list} now={now} empty={t("emptyHistory")} />
     </>
-  );
-}
-
-/** One day as a 24h strip; sleep is the base layer so its pattern reads first. */
-function PatternRow({ day, events, now }: { day: Date; events: BabyEvent[]; now: number }) {
-  const from = startOfDay(day).getTime();
-  const to = from + DAY;
-  const segs: { left: number; width: number; color: string; z: number }[] = [];
-  for (const e of events) {
-    const s = Math.max(new Date(e.started_at).getTime(), from);
-    const en = Math.min(e.ended_at ? new Date(e.ended_at).getTime() : now, to);
-    if (en < from || s >= to) continue;
-    const isSleep = e.category === "sleep";
-    const color = isSleep ? (e.subtype === "night" ? "var(--c-sleep-night)" : "var(--c-sleep-nap)") : catVar(e.category);
-    const width = isSleep ? ((en - s) / DAY) * 100 : Math.max(((en - s) / DAY) * 100, 0.9);
-    segs.push({ left: ((s - from) / DAY) * 100, width, color, z: isSleep ? 0 : 1 });
-  }
-  return (
-    <div className="track">
-      {segs.map((g, i) => (
-        <span key={i} className="seg-bar" style={{ left: `${g.left}%`, width: `${g.width}%`, background: g.color, zIndex: g.z,
-          ...(g.z ? { insetBlock: "4px" } : {}) }} />
-      ))}
-    </div>
   );
 }
 
