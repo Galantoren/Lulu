@@ -526,11 +526,13 @@ button.chip[aria-pressed="false"] { background: var(--fill); }
 .wk-ev.sleep { background: var(--fill); border-radius: 6px; min-height: 3px; z-index: 1; }
 .wk-ev.bar { inset-inline: 2px; height: 5px; border-radius: 3px; z-index: 2; background: var(--fill); }
 .wk-ev.mark { inset-inline: 5px; height: 4px; border-radius: 2px; z-index: 3; background: var(--fill); }
-/* Highlight: keeps the category fill, outlined in red */
-.wk-ev.hl, .hl-swatch.hl { border: 2px solid var(--hl-red); background: var(--fill); }
-.wk-ev.mark.hl { height: 8px; inset-inline: 3px; border-radius: 4px; }
-.wk-ev.bar.hl { min-height: 8px; }
-.wk-ev.sleep.hl { border-width: 2.5px; }
+/* Highlight: keeps the category fill with a soft red glow around it */
+.wk-ev.hl, .hl-swatch.hl {
+  background: var(--fill);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--hl-red) 45%, transparent), 0 0 9px 1px color-mix(in srgb, var(--hl-red) 55%, transparent);
+}
+.wk-ev.hl { z-index: 5; }
+.wk-ev.mark.hl { height: 6px; inset-inline: 4px; border-radius: 3px; }
 .wk-now { position: absolute; inset-inline: -2px; height: 2px; background: var(--c-sleep); z-index: 4; pointer-events: none; }
 .wk-now i { position: absolute; inset-inline-start: -4px; top: -3px; width: 8px; height: 8px; border-radius: 50%; background: var(--c-sleep); }
 .wk-foot { text-align: center; margin-top: 8px; }

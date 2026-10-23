@@ -99,23 +99,32 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const dismissToast = useCallback(() => setToast(null), []);
 
   /** Loads who-am-I, family and babies, and decides which screen to show. */
+  /** Loads who-am-I, family and babies, and decides which screen to show.
+   *  Sign-in can trigger several loads at once; only the newest one may change the screen or show an error. */
+  const loadGen = useRef(0);
   const loadAccount = useCallback(async () => {
+    const gen = ++loadGen.current;
+    const stale = () => gen !== loadGen.current;
     try {
       const u = await backend.getUser();
+      if (stale()) return;
       setUser(u);
       if (!u) return setPhase("login");
       const [p, f] = await Promise.all([backend.getProfile(), backend.getFamily()]);
+      if (stale()) return;
+      setAuthError("");
       setProfile(p);
       setFamily(f);
       if (!p || !f) return setPhase("onboarding");
       const bs = await backend.listBabies(f.id);
+      if (stale()) return;
       setBabies(bs);
       // Partner names are only for the log avatars; never let them block opening the app.
       backend.getMembers(f.id).then(setMembers).catch((err) => console.error(err));
       setPhase(bs.length ? "ready" : "onboarding");
-      setAuthError("");
     } catch (err) {
       console.error(err);
+      if (stale()) return;
       setAuthError((err as Error).message || String(err));
       setPhase((ph) => (ph === "loading" ? "login" : ph));
     }

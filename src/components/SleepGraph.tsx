@@ -183,7 +183,8 @@ export function SleepGraph({ events, now, day = new Date() }: { events: BabyEven
           const cx = x(new Date(e.started_at).getTime());
           return (
             <circle key={e.id} className="arc" cx={cx} cy={laneY(e.category)} r={hl ? 5 : 4}
-              fill={`var(--c-${e.category})`} stroke={hl ? "var(--hl-red)" : "var(--surface)"} strokeWidth={hl ? 2.5 : 1.2}
+              fill={`var(--c-${e.category})`} stroke="var(--surface)" strokeWidth={1.2}
+              style={hl ? { filter: "drop-shadow(0 0 3px var(--hl-red)) drop-shadow(0 0 1px var(--hl-red))" } : undefined}
               onClick={() => open(e)}>
               <title>{t(e.subtype)}</title>
             </circle>

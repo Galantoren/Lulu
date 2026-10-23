@@ -55,7 +55,7 @@ const en = {
   // history
   day: "Day", week: "Week", monthTab: "Month",
   filters: "Filters", show: "Show", highlightTitle: "Highlight in red",
-  highlightFoot: "Highlighted entries keep their colour and get a red outline, so they stand out in History and on the sleep graph.",
+  highlightFoot: "Highlighted entries keep their colour and get a soft red glow, so they stand out in History and on the sleep graph.",
   tapDay: "tap a day for details", backToWeek: "Week", sleepPerDay: "Sleep per day (hours)", avg: "avg",
   emptyHistory: "Log a few days to see patterns appear.",
   vsLastWeek: "{diff} per day vs last week",
@@ -177,7 +177,7 @@ const he: Record<TKey, string> = {
   newEntry: "רשומה חדשה",
   day: "יום", week: "שבוע", monthTab: "חודש",
   filters: "סינון", show: "הצגה", highlightTitle: "הדגשה באדום",
-  highlightFoot: "רשומות מודגשות שומרות על הצבע שלהן ומקבלות מסגרת אדומה, כדי לבלוט בהיסטוריה ובגרף השינה.",
+  highlightFoot: "רשומות מודגשות שומרות על הצבע שלהן ומקבלות זוהר אדום עדין, כדי לבלוט בהיסטוריה ובגרף השינה.",
   tapDay: "הקישו על יום לפרטים", backToWeek: "שבוע", sleepPerDay: "שינה ליום (שעות)", avg: "ממוצע",
   emptyHistory: "רשמו כמה ימים כדי לראות דפוסים.",
   vsLastWeek: "{diff} ליום לעומת שבוע שעבר",

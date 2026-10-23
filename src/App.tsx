@@ -21,6 +21,10 @@ function Shell() {
     window.scrollTo(0, 0);
   }, [tab]);
   const close = () => openSheet(null);
+  // After signing out (or before setup is done), always come back to Today.
+  useEffect(() => {
+    if (phase !== "ready") setTab("today");
+  }, [phase]);
 
   if (phase === "loading") return <div className="screen" aria-busy="true" />;
   if (phase === "login") return <Login />;
