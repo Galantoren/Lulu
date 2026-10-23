@@ -14,8 +14,8 @@ import { ErrorBoundary } from "./components/ErrorBoundary";
 
 function Shell() {
   const { phase, sheet, openSheet, events } = useApp();
-  const runningCount = events.filter((e) => !e.ended_at).length;
   const [tab, setTab] = useState<Tab>("today");
+  const runningCount = tab === "today" ? 0 : events.filter((e) => !e.ended_at).length;
   // Braces matter: newer browsers return a Promise from scrollTo, which React would call as a cleanup.
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -35,7 +35,8 @@ function Shell() {
         {tab === "health" && <Health />}
         {tab === "more" && <More />}
       </ErrorBoundary>
-      <Dock />
+      {/* On Today the running timers are cards at the top, so the floating bars only show elsewhere */}
+      <Dock showTimers={tab !== "today"} />
       <TabBar tab={tab} onChange={setTab} />
       <ErrorBoundary resetKey={sheet ? sheet.kind : "none"}>
       {sheet?.kind === "event" && <EventSheet key={sheet.event.id} initial={sheet.event} isNew={sheet.isNew} onClose={close} />}

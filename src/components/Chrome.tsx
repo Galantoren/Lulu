@@ -31,11 +31,11 @@ export function TabBar({ tab, onChange }: { tab: Tab; onChange: (t: Tab) => void
 }
 
 /** Floating "now playing" bars for every running timer, plus the toast, above the tab bar. */
-export function Dock() {
+export function Dock({ showTimers = true }: { showTimers?: boolean }) {
   const { events, t, lang, stopEvent, openSheet, toast, dismissToast } = useApp();
   const now = useNow(1000);
   const running = events
-    .filter((e) => !e.ended_at)
+    .filter((e) => showTimers && !e.ended_at)
     .sort((a, b) => CATEGORY_ORDER.indexOf(a.category) - CATEGORY_ORDER.indexOf(b.category));
 
   useEffect(() => {

@@ -3,26 +3,15 @@ import { useApp } from "../state/AppContext";
 import { catVar } from "../lib/categories";
 import { eventTitle } from "../lib/summary";
 import { addDays, DAY, fmtDate, sameDay, startOfDay } from "../lib/time";
-import type { BabyEvent, Category } from "../types";
+
 
 const HOUR_PX = 22;
 const NIGHT_START = 19;
 const NIGHT_END = 7;
 
-/** Second colour of each category's highlight gradient. */
-export const ACCENT: Record<Category, string> = {
-  sleep: "#c9a7f2",
-  feeding: "#f6c560",
-  diaper: "#a8703f",
-  pumping: "#f4a6c9",
-  health: "#f2b84b",
-};
-
-export const isVisible = (e: BabyEvent, hidden: string[]) => !hidden.includes(e.category) && !hidden.includes(e.subtype);
-
 /**
  * Week at a glance: one column per day, 24h top to bottom. Sleep is drawn as blocks, everything
- * else as thin bars on top. Subtypes chosen in Filters get a gradient stroke.
+ * else as thin bars on top. Subtypes chosen in Filters get a red outline.
  */
 export function WeekGrid({ lastDay, now, onPrev, onNext, canNext, onOpenDay }: {
   lastDay: Date;
@@ -34,7 +23,7 @@ export function WeekGrid({ lastDay, now, onPrev, onNext, canNext, onOpenDay }: {
 }) {
   const { t, lang, events, settings, profile, openSheet } = useApp();
   const days = Array.from({ length: 7 }, (_, i) => addDays(lastDay, i - 6)); // oldest → newest
-  const shown = events.filter((e) => isVisible(e, settings.historyHidden));
+  const shown = events;
   const h12 = profile?.time_format === "12h";
   const rtl = lang === "he";
   const Prev = rtl ? ChevronRight : ChevronLeft;
@@ -99,8 +88,6 @@ export function WeekGrid({ lastDay, now, onPrev, onNext, canNext, onOpenDay }: {
                         top: `${top}%`,
                         height: kind === "sleep" || (kind === "bar" && en - s > 20 * 60_000) ? `${heightPct}%` : undefined,
                         ["--fill" as string]: fill,
-                        ["--c1" as string]: catVar(e.category),
-                        ["--c2" as string]: ACCENT[e.category],
                       }}
                       onClick={() => openSheet({ kind: "event", event: e, isNew: false })} />
                   );

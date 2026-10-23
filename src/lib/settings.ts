@@ -9,8 +9,7 @@ export interface DeviceSettings {
   lastBrand: string;
   /** Language chosen before signing in; the profile's language wins once it exists. */
   language: "en" | "he" | null;
-  /** History filters: categories or subtypes hidden, and subtypes drawn with a gradient stroke. */
-  historyHidden: string[];
+  /** Subtypes drawn with a red outline in History and the sleep graph. */
   historyHighlight: string[];
   /** Per baby: medicine/temperature before this time are hidden from the Today card (eraser). */
   healthClearedAt: Record<string, string>;
@@ -26,7 +25,6 @@ const defaults: DeviceSettings = {
   lastMilkType: "formula",
   lastBrand: "",
   language: null,
-  historyHidden: [],
   historyHighlight: ["dirty", "mixed"],
   healthClearedAt: {},
 };
