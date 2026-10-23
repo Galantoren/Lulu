@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Moon, Share } from "lucide-react";
+import { ChevronLeft, ChevronRight, KeyRound, Moon, Plus, Share } from "lucide-react";
 import { useApp } from "../state/AppContext";
 import { BabyForm } from "../sheets/BabySheets";
 import { backend, uuid } from "../lib/backend";
@@ -101,10 +101,24 @@ export function Login() {
   );
 }
 
+/** "Signed in as …  Not you? Sign out" so a wrong account is obvious. */
+function SignedInAs() {
+  const { t, user } = useApp();
+  if (backend.mode !== "supabase" || !user?.email) return null;
+  return (
+    <p className="switch-line">
+      {t("signedInAsShort", { email: user.email })}{" "}
+      <button className="link-inline" onClick={() => backend.signOut()}>{t("notYou")}</button>
+    </p>
+  );
+}
+
 /** Family (create or join) → baby → invite partner. Steps skip what already exists. */
 export function Onboarding() {
   const { t, lang, user, profile, family, babies, saveProfile, saveBaby, refresh } = useApp();
-  const [joining, setJoining] = useState(false);
+  // Cloud: first choose create vs join (with who is signed in). On-device there is only "create".
+  const [famMode, setFamMode] = useState<"choose" | "create" | "join">(backend.mode === "supabase" ? "choose" : "create");
+  const Back = lang === "he" ? ChevronRight : ChevronLeft;
   const [famName, setFamName] = useState("");
   const [code, setCode] = useState("");
   const [baby, setBaby] = useState<Baby>({ id: uuid(), family_id: family?.id ?? "", name: "", birth_date: null, sex: null });
@@ -126,40 +140,59 @@ export function Onboarding() {
     <div className="onb">
       <div className="onb-top"><span className="onb-moon"><Moon size={30} /></span>{step !== "invite" && <LangPill />}</div>
 
-      {step === "family" && (
+      {step === "family" && famMode === "choose" && (
         <>
           <div>
-            <h1 className="t-large" style={{ margin: "0 0 8px" }}>{joining ? t("joinFamilyTitle") : t("createFamilyTitle")}</h1>
-            <p className="t-callout muted" style={{ margin: 0 }}>{joining ? t("joinFamilySub") : t("createFamilySub")}</p>
+            <h1 className="t-large" style={{ margin: "0 0 8px" }}>{t("setupFamilyTitle")}</h1>
+            <p className="t-callout muted" style={{ margin: 0 }}>{t("setupFamilySub")}</p>
+          </div>
+          <div className="choice-list">
+            <button className="choice press" onClick={() => setFamMode("join")}>
+              <span className="choice-icon"><KeyRound size={22} /></span>
+              <span className="grow"><b>{t("joinFamily")}</b><span className="t-sub">{t("joinFamilyHint")}</span></span>
+            </button>
+            <button className="choice press" onClick={() => setFamMode("create")}>
+              <span className="choice-icon"><Plus size={22} /></span>
+              <span className="grow"><b>{t("createNewFamily")}</b><span className="t-sub">{t("createFamilyHint")}</span></span>
+            </button>
+          </div>
+          <div className="spacer" />
+          <SignedInAs />
+        </>
+      )}
+
+      {step === "family" && famMode !== "choose" && (
+        <>
+          {cloud && (
+            <button className="link back-link" onClick={() => { setFamMode("choose"); setErr(""); }}>
+              <Back size={20} />{t("back")}
+            </button>
+          )}
+          <div>
+            <h1 className="t-large" style={{ margin: "0 0 8px" }}>{famMode === "join" ? t("joinFamilyTitle") : t("createFamilyTitle")}</h1>
+            <p className="t-callout muted" style={{ margin: 0 }}>{famMode === "join" ? t("joinFamilySub") : t("createFamilySub")}</p>
           </div>
           <div className="group">
-            {joining ? (
+            {famMode === "join" ? (
               <label className="row"><span className="grow">{t("inviteCode")}</span>
-                <input type="text" value={code} placeholder="ABC123" maxLength={6} autoCapitalize="characters"
+                <input type="text" value={code} placeholder="ABC123" maxLength={6} autoCapitalize="characters" autoFocus
                   style={{ textTransform: "uppercase", letterSpacing: "0.2em" }} onChange={(e) => setCode(e.target.value)} />
               </label>
             ) : (
               <label className="row"><span className="grow">{t("familyName")}</span>
-                <input type="text" value={famName} placeholder={t("familyNamePh")} onChange={(e) => setFamName(e.target.value)} />
+                <input type="text" value={famName} placeholder={t("familyNamePh")} autoFocus onChange={(e) => setFamName(e.target.value)} />
               </label>
             )}
           </div>
           <ErrorText text={err} />
           <div className="spacer" />
-          <button className="btn block press" disabled={busy || (joining ? code.trim().length < 6 : !famName.trim())} onClick={() => run(async () => {
+          <button className="btn block press" disabled={busy || (famMode === "join" ? code.trim().length < 6 : !famName.trim())} onClick={() => run(async () => {
             await ensureProfile();
-            if (joining) await backend.joinFamily(code);
+            if (famMode === "join") await backend.joinFamily(code);
             else await backend.createFamily(famName.trim());
             await refresh();
-          })}>{joining ? t("join") : t("createFamily")}</button>
-          {cloud && (
-            <p className="switch-line">
-              {joining ? t("noCode") : t("haveCode2")}{" "}
-              <button className="link-inline" onClick={() => { setJoining(!joining); setErr(""); }}>
-                {joining ? t("createFamily") : t("joinFamily")}
-              </button>
-            </p>
-          )}
+          })}>{famMode === "join" ? t("join") : t("createFamily")}</button>
+          {cloud && <SignedInAs />}
         </>
       )}
 

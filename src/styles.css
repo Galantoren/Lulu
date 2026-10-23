@@ -623,3 +623,17 @@ button.chip[aria-pressed="false"] { background: var(--fill); }
 .tl-time { font-weight: 700; font-size: 1.125rem; }
 [data-theme="dark"] .timer-line { box-shadow: none; }
 [data-theme="dark"] .timer-line::before { background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), transparent 55%); }
+
+/* Onboarding: create vs join choice */
+.choice-list { display: flex; flex-direction: column; gap: 12px; }
+.choice {
+  display: flex; align-items: center; gap: 14px; padding: 16px; border-radius: 20px; text-align: start; width: 100%;
+  background: var(--surface); border: 1px solid var(--separator); box-shadow: 0 6px 18px -12px rgba(80, 60, 160, 0.35);
+}
+.choice b { display: block; font-size: 1.0625rem; margin-bottom: 2px; }
+.choice .t-sub { display: block; }
+.choice-icon {
+  width: 46px; height: 46px; border-radius: 14px; display: grid; place-items: center; flex: none; color: #fff;
+  background: linear-gradient(135deg, #a9a3ee, #e7a9cf);
+}
+.back-link { display: inline-flex; align-items: center; gap: 2px; align-self: flex-start; margin-inline-start: -6px; }
