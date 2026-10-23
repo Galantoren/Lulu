@@ -132,3 +132,6 @@ create policy "family photos write" on storage.objects for insert
 drop policy if exists "family photos delete" on storage.objects;
 create policy "family photos delete" on storage.objects for delete
   using (bucket_id = 'photos' and is_member(((storage.foldername(name))[1])::uuid));
+
+-- Make the API pick up new columns right away
+notify pgrst, 'reload schema';

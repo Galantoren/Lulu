@@ -215,7 +215,12 @@ function supabaseBackend(sb: SupabaseClient): Backend {
     async saveBaby(b) {
       const { error } = await sb.from("babies").upsert(b);
       if (error?.message.includes("photo_path")) {
-        throw new Error("Baby photos need one database update: in Supabase SQL Editor run  alter table babies add column if not exists photo_path text;");
+        // Missing column, or Supabase's API hasn't reloaded its schema cache since the column was added.
+        throw new Error(
+          "Baby photos need one database update. In Supabase SQL Editor run:\n" +
+            "alter table public.babies add column if not exists photo_path text;\n" +
+            "notify pgrst, 'reload schema';\n\n(" + error.message + ")",
+        );
       }
       if (error) throw new Error(error.message);
     },

@@ -91,7 +91,7 @@ export function BabyEditSheet({ baby, onClose }: { baby: Baby | null; onClose: (
     <Sheet title={baby ? baby.name : t("addBaby")} onClose={onClose} cancelLabel={t("cancel")} saveLabel={t("save")}
       onSave={b.name.trim() ? save : undefined}>
       <BabyForm baby={b} onChange={setB} />
-      {err && <p className="t-foot" role="alert" style={{ margin: 0, color: "var(--danger)" }}>{err}</p>}
+      {err && <p className="t-foot" role="alert" style={{ margin: 0, color: "var(--danger)", whiteSpace: "pre-wrap", userSelect: "text" }}>{err}</p>}
     </Sheet>
   );
 }
