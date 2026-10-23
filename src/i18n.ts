@@ -10,7 +10,7 @@ const en = {
   wet: "Wet", dirty: "Dirty", mixed: "Mixed", dry: "Dry check",
   medicine: "Medicine", temperature: "Temperature", growth: "Growth",
   // today
-  asleep: "Asleep", awake: "Awake",
+  asleep: "Asleep", awake: "Awake", since: "since {time}",
   startSleep: "Start sleep", wakeUp: "Wake up",
   totalSleepToday: "Total sleep today", naps: "Naps", longestNight: "Longest night stretch",
   lastFeed: "Last feed", lastDiaper: "Last diaper", lastDose: "Medicine", lastPump: "Pumping",
@@ -127,7 +127,7 @@ const he: Record<TKey, string> = {
   breastfeeding: "הנקה", bottle: "בקבוק", solids: "מוצקים",
   wet: "רטוב", dirty: "מלוכלך", mixed: "מעורב", dry: "בדיקה יבשה",
   medicine: "תרופה", temperature: "חום", growth: "גדילה",
-  asleep: "ישן/ה", awake: "ער/ה",
+  asleep: "ישן/ה", awake: "ער/ה", since: "מאז {time}",
   startSleep: "התחלת שינה", wakeUp: "התעורר/ה",
   totalSleepToday: "סה״כ שינה היום", naps: "תנומות", longestNight: "רצף לילה ארוך",
   lastFeed: "האכלה אחרונה", lastDiaper: "חיתול אחרון", lastDose: "תרופה", lastPump: "שאיבה",

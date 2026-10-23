@@ -2,7 +2,7 @@ import { useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useApp, useNow } from "../state/AppContext";
 import { Seg } from "../components/Sheet";
-import { DayRing } from "../components/DayRing";
+import { SleepGraph } from "../components/SleepGraph";
 import { EventLog } from "../components/EventLog";
 import { CATEGORY_ORDER, catVar } from "../lib/categories";
 import { dayStats } from "../lib/summary";
@@ -97,7 +97,7 @@ function DayView({ day, events, now }: { day: Date; events: BabyEvent[]; now: nu
   });
   return (
     <>
-      <DayRing events={events} now={sameDay(day, new Date()) ? now : from + DAY} day={day} />
+      <SleepGraph events={events} now={sameDay(day, new Date()) ? now : from + DAY} day={day} />
       <div className="chips">
         <span className="chip" style={{ ["--cat" as string]: catVar("sleep") }}><span className="dot" />{t("sleep")} <b>{fmtDuration(s.sleepMs, lang)}</b></span>
         <span className="chip" style={{ ["--cat" as string]: catVar("feeding") }}><span className="dot" />{t("feeds")} <b>{s.feeds}</b>{s.bottleMl > 0 && <span className="num">· {s.bottleMl} ml</span>}</span>
