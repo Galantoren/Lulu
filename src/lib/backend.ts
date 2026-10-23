@@ -1,5 +1,6 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { Baby, BabyEvent, Family, Member, Profile } from "../types";
+import { authStorage } from "./authStorage";
 
 export interface User {
   id: string;
@@ -280,4 +281,4 @@ const url = normalizeSupabaseUrl(import.meta.env.VITE_SUPABASE_URL as string | u
 const key = (import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined)?.trim();
 
 export const backend: Backend =
-  url && key ? supabaseBackend(createClient(url, key, { auth: { persistSession: true, detectSessionInUrl: true } })) : localBackend();
+  url && key ? supabaseBackend(createClient(url, key, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, storage: authStorage } })) : localBackend();

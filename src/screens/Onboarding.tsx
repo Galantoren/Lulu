@@ -3,6 +3,8 @@ import { Moon, Share } from "lucide-react";
 import { useApp } from "../state/AppContext";
 import { BabyForm } from "../sheets/BabySheets";
 import { backend, uuid } from "../lib/backend";
+import { setStaySignedIn, staySignedIn } from "../lib/authStorage";
+import { Switch } from "../components/Sheet";
 import type { Baby } from "../types";
 
 const EMAIL_KEY = "lulu:loginEmail";
@@ -38,6 +40,7 @@ export function Login() {
   const [email, setEmail] = useState(() => localStorage.getItem(EMAIL_KEY) ?? "");
   const [password, setPassword] = useState("");
   const [info, setInfo] = useState("");
+  const [stay, setStay] = useState(staySignedIn);
   const { err, setErr, busy, run } = useRun();
   const mail = email.trim();
   const ok = mail.includes("@") && password.length >= 6;
@@ -70,20 +73,24 @@ export function Login() {
         <h1 className="t-large" style={{ margin: "0 0 8px" }}>{creating ? t("createAccountTitle") : t("welcome")}</h1>
         <p className="t-callout muted" style={{ margin: 0 }}>{creating ? t("createAccountSub") : t("welcomeSub")}</p>
       </div>
-      <form className="group" onSubmit={(e) => { e.preventDefault(); if (ok) submit(); }}>
+      {/* A real form with a submit button lets iPhone offer to save the password and fill it with Face ID */}
+      <form id="login-form" className="group" onSubmit={(e) => { e.preventDefault(); if (ok && !busy) submit(); }}>
         <label className="row"><span>{t("email")}</span>
-          <input type="email" autoComplete="email" value={email} placeholder="you@example.com" onChange={(e) => setEmail(e.target.value)} />
+          <input type="email" name="email" autoComplete="username" value={email} placeholder="you@example.com" onChange={(e) => setEmail(e.target.value)} />
         </label>
         <label className="row"><span>{t("password")}</span>
-          <input type="password" value={password} placeholder={creating ? t("passwordHint") : "••••••"}
+          <input type="password" name="password" value={password} placeholder={creating ? t("passwordHint") : "••••••"}
             autoComplete={creating ? "new-password" : "current-password"} onChange={(e) => setPassword(e.target.value)} />
         </label>
-        <button type="submit" hidden />
+        <label className="row">
+          <span className="grow">{t("staySignedIn")}</span>
+          <Switch checked={stay} label={t("staySignedIn")} onChange={(on) => { setStay(on); setStaySignedIn(on); }} />
+        </label>
       </form>
       {info && <p className="t-foot" style={{ margin: 0 }}>{info}</p>}
       <ErrorText text={err || authError} />
       <div className="spacer" />
-      <button className="btn block press" disabled={busy || !ok} onClick={submit}>{creating ? t("createAccount") : t("signIn")}</button>
+      <button type="submit" form="login-form" className="btn block press" disabled={busy || !ok}>{creating ? t("createAccount") : t("signIn")}</button>
       <p className="switch-line">
         {creating ? t("haveAccount") : t("newHere")}{" "}
         <button className="link-inline" onClick={() => { setCreating(!creating); setErr(""); setInfo(""); }}>
