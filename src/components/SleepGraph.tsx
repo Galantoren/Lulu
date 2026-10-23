@@ -1,6 +1,5 @@
 import { Moon, SlidersHorizontal, Sun, Sunrise } from "lucide-react";
 import { useApp } from "../state/AppContext";
-import { ACCENT, isVisible } from "./WeekGrid";
 import { CATEGORY_ICON, catVar } from "../lib/categories";
 import { DAY, HOUR, fmtClock, fmtDuration, startOfDay } from "../lib/time";
 import type { BabyEvent, Category } from "../types";
@@ -9,8 +8,11 @@ import type { BabyEvent, Category } from "../types";
 const W = 340;
 const START = 24; // room for the lane icons at the start side
 const END = 10;
-const Y_AWAKE = 50;
-const Y_ASLEEP = 112;
+// Asleep is the top level and awake the bottom: sleep reads as the line rising.
+const TOP = 50;
+const BOTTOM = 112;
+const Y_ASLEEP = TOP;
+const Y_AWAKE = BOTTOM;
 const LANE0 = 132; // first row of dots under the graph
 const LANE_H = 13;
 const NIGHT_START = 19; // hours shaded as night: 19:00–24:00 and 00:00–07:00
@@ -69,9 +71,9 @@ export function SleepGraph({ events, now, day = new Date() }: { events: BabyEven
     .pop();
 
   // Other entries, one row per category, following the shared filters.
-  const marks = events.filter((e) => e.category !== "sleep" && isVisible(e, settings.historyHidden)
+  const marks = events.filter((e) => e.category !== "sleep"
     && new Date(e.started_at).getTime() >= dayStart && new Date(e.started_at).getTime() < dayEnd);
-  const lanes = LANES.filter((c) => !settings.historyHidden.includes(c));
+  const lanes = LANES;
   const laneY = (c: Category) => LANE0 + lanes.indexOf(c) * LANE_H;
   const yLabels = LANE0 + lanes.length * LANE_H + 8;
   const H = yLabels + 10;
@@ -90,7 +92,6 @@ export function SleepGraph({ events, now, day = new Date() }: { events: BabyEven
           <span className="sg-key"><i style={{ background: "var(--sg-nap)" }} />{t("nap")}</span>
           <button className="sg-filter press" aria-label={t("filters")} onClick={() => openSheet({ kind: "filters" })}>
             <SlidersHorizontal size={15} />
-            {settings.historyHidden.length > 0 && <span className="filter-dot" />}
           </button>
         </div>
       </div>
@@ -102,28 +103,22 @@ export function SleepGraph({ events, now, day = new Date() }: { events: BabyEven
             <stop offset="1" stopColor="var(--sg-night-band)" stopOpacity="0.25" />
           </linearGradient>
           <linearGradient id="sg-fill-night" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stopColor="var(--sg-night)" stopOpacity="0.15" />
-            <stop offset="1" stopColor="var(--sg-night)" stopOpacity="0.75" />
+            <stop offset="0" stopColor="var(--sg-night)" stopOpacity="0.75" />
+            <stop offset="1" stopColor="var(--sg-night)" stopOpacity="0.15" />
           </linearGradient>
           <linearGradient id="sg-fill-nap" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stopColor="var(--sg-nap)" stopOpacity="0.15" />
-            <stop offset="1" stopColor="var(--sg-nap)" stopOpacity="0.8" />
+            <stop offset="0" stopColor="var(--sg-nap)" stopOpacity="0.8" />
+            <stop offset="1" stopColor="var(--sg-nap)" stopOpacity="0.15" />
           </linearGradient>
-          {LANES.map((c) => (
-            <linearGradient key={c} id={`sg-hl-${c}`} x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0" stopColor={catVar(c)} />
-              <stop offset="1" stopColor={ACCENT[c]} />
-            </linearGradient>
-          ))}
           <linearGradient id="sg-line" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stopColor="var(--sg-awake-line)" />
-            <stop offset="1" stopColor="var(--sg-night)" />
+            <stop offset="0" stopColor="var(--sg-night)" />
+            <stop offset="1" stopColor="var(--sg-awake-line)" />
           </linearGradient>
         </defs>
 
         {/* Night bands with a moon, the day with a sun */}
         {nights.map((n, i) => (
-          <rect key={i} x={n.left} y={14} width={n.width} height={Y_ASLEEP - 14 + 6} rx={10} fill="url(#sg-night-band)" />
+          <rect key={i} x={n.left} y={14} width={n.width} height={BOTTOM - 14 + 6} rx={10} fill="url(#sg-night-band)" />
         ))}
         <Moon x={xh(NIGHT_END / 2) - 7} y={18} width={14} height={14} color="var(--sg-night)" strokeWidth={2} />
         <Moon x={xh((NIGHT_START + 24) / 2) - 7} y={18} width={14} height={14} color="var(--sg-night)" strokeWidth={2} />
@@ -131,7 +126,7 @@ export function SleepGraph({ events, now, day = new Date() }: { events: BabyEven
 
         {/* Hour grid */}
         {[0, 3, 6, 9, 12, 15, 18, 21, 24].map((h) => (
-          <line key={h} x1={xh(h)} x2={xh(h)} y1={36} y2={Y_ASLEEP + 6} stroke="var(--separator)" strokeWidth={h % 6 ? 0.5 : 0.8} strokeDasharray={h % 6 ? "2 3" : undefined} />
+          <line key={h} x1={xh(h)} x2={xh(h)} y1={36} y2={BOTTOM + 6} stroke="var(--separator)" strokeWidth={h % 6 ? 0.5 : 0.8} strokeDasharray={h % 6 ? "2 3" : undefined} />
         ))}
         {[0, 6, 12, 18, 24].map((h) => (
           <text key={h} x={xh(h)} y={yLabels} textAnchor="middle" fontSize="10" fill="var(--label-2)" className="num">
@@ -142,14 +137,14 @@ export function SleepGraph({ events, now, day = new Date() }: { events: BabyEven
         {/* Level guides */}
         <line x1={X0} x2={X1} y1={Y_AWAKE} y2={Y_AWAKE} stroke="var(--sg-awake-line)" strokeOpacity={0.25} strokeWidth={1} />
         <line x1={X0} x2={X1} y1={Y_ASLEEP} y2={Y_ASLEEP} stroke="var(--sg-night)" strokeOpacity={0.2} strokeWidth={1} />
-        <text x={rtl ? X1 - 2 : X0 + 2} y={Y_AWAKE - 5} fontSize="9" fill="var(--label-3)" textAnchor={rtl ? "end" : "start"}>{t("awake")}</text>
-        <text x={rtl ? X1 - 2 : X0 + 2} y={Y_ASLEEP + 13} fontSize="9" fill="var(--label-3)" textAnchor={rtl ? "end" : "start"}>{t("asleep")}</text>
+        <text x={rtl ? X1 - 2 : X0 + 2} y={Y_AWAKE + 13} fontSize="9" fill="var(--label-3)" textAnchor={rtl ? "end" : "start"}>{t("awake")}</text>
+        <text x={rtl ? X1 - 2 : X0 + 2} y={Y_ASLEEP - 5} fontSize="9" fill="var(--label-3)" textAnchor={rtl ? "end" : "start"}>{t("asleep")}</text>
 
         {/* Sleep areas (tap to edit) */}
         {segs.map((g) => {
           const sp = span(g.s, g.en);
           return (
-            <rect key={g.e.id} className="arc" x={sp.left} y={Y_AWAKE} width={Math.max(sp.width, 2)} height={Y_ASLEEP - Y_AWAKE} rx={4}
+            <rect key={g.e.id} className="arc" x={sp.left} y={TOP} width={Math.max(sp.width, 2)} height={BOTTOM - TOP} rx={4}
               fill={g.e.subtype === "night" ? "url(#sg-fill-night)" : "url(#sg-fill-nap)"} onClick={() => open(g.e)}>
               <title>{`${t(g.e.subtype)} ${fmtClock(new Date(g.s), fmt)}–${fmtClock(new Date(g.en), fmt)}`}</title>
             </rect>
@@ -165,8 +160,8 @@ export function SleepGraph({ events, now, day = new Date() }: { events: BabyEven
         {/* Morning wake-up */}
         {wake && (
           <g>
-            <line x1={x(wake)} x2={x(wake)} y1={30} y2={Y_ASLEEP + 6} stroke="var(--sg-sun)" strokeWidth={1.5} strokeDasharray="3 3" strokeLinecap="round" />
-            <Sunrise x={x(wake) - 8} y={Y_ASLEEP + 10} width={16} height={16} color="var(--sg-sun)" strokeWidth={2} />
+            <line x1={x(wake)} x2={x(wake)} y1={30} y2={BOTTOM + 6} stroke="var(--sg-sun)" strokeWidth={1.5} strokeDasharray="3 3" strokeLinecap="round" />
+            <Sunrise x={x(wake) - 8} y={BOTTOM + 10} width={16} height={16} color="var(--sg-sun)" strokeWidth={2} />
             <text x={x(wake)} y={30 - 4} textAnchor="middle" fontSize="10" fontWeight="600" fill="var(--sg-sun-text)" className="num">
               {fmtClock(new Date(wake), fmt)}
             </text>
@@ -188,7 +183,7 @@ export function SleepGraph({ events, now, day = new Date() }: { events: BabyEven
           const cx = x(new Date(e.started_at).getTime());
           return (
             <circle key={e.id} className="arc" cx={cx} cy={laneY(e.category)} r={hl ? 5 : 4}
-              fill={`var(--c-${e.category})`} stroke={hl ? `url(#sg-hl-${e.category})` : "var(--surface)"} strokeWidth={hl ? 2.5 : 1.2}
+              fill={`var(--c-${e.category})`} stroke={hl ? "var(--hl-red)" : "var(--surface)"} strokeWidth={hl ? 2.5 : 1.2}
               onClick={() => open(e)}>
               <title>{t(e.subtype)}</title>
             </circle>

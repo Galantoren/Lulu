@@ -1,21 +1,22 @@
 import { useEffect, useState } from "react";
-import { AlertCircle, Eraser, HeartPulse, Moon, Pill, Sun, Thermometer } from "lucide-react";
+import { AlertCircle, Eraser, HeartPulse, Pill, Thermometer } from "lucide-react";
 import { useApp, useNow } from "../state/AppContext";
 import { CATEGORY_ICON, CATEGORY_ORDER, LONG_RUNNING_HOURS, catVar, suggestMeal, suggestSleepType } from "../lib/categories";
 import { SleepGraph } from "../components/SleepGraph";
 import { ThemeToggle } from "../components/ThemeToggle";
+import { RunningCards } from "../components/RunningCards";
 import { BabyAvatar } from "../components/BabyAvatar";
 import { EventLog } from "../components/EventLog";
 import { ageLabel } from "../lib/age";
-import { dayStats, eventTitle, longestNight } from "../lib/summary";
+import { eventTitle } from "../lib/summary";
 import { otherSide } from "../lib/feeding";
-import { fmtClock, fmtDuration, HOUR, startOfDay } from "../lib/time";
+import { fmtDuration, HOUR, startOfDay } from "../lib/time";
 import type { BabyEvent, Category, Side } from "../types";
 import type { TKey } from "../i18n";
 
 export function Today() {
   const app = useApp();
-  const { t, lang, baby, events, settings, setSettings, profile, startTimer, stopEvent, saveEvent, newEvent, openSheet, showToast } = app;
+  const { t, lang, baby, events, settings, setSettings, startTimer, stopEvent, saveEvent, newEvent, openSheet, showToast } = app;
   const now = useNow(1000);
   const [scrolled, setScrolled] = useState(false);
   useEffect(() => {
@@ -28,10 +29,6 @@ export function Today() {
 
   const running = (c: Category) => events.find((e) => e.category === c && !e.ended_at);
   const last = (c: Category) => events.find((e) => e.category === c);
-  const sleeping = running("sleep");
-  const lastSleep = events.find((e) => e.category === "sleep" && e.ended_at);
-  const awakeSince = lastSleep?.ended_at ? new Date(lastSleep.ended_at).getTime() : null;
-  const stats = dayStats(events, new Date(), now);
   const todayStart = startOfDay().getTime();
   const todays = events.filter((e) => new Date(e.started_at).getTime() >= todayStart || !e.ended_at);
 
@@ -120,37 +117,8 @@ export function Today() {
           </button>
         </div>
 
-        {/* Sleep hero — the most important card. Liquid-glass card: sunrise pastels awake, dusk pastels asleep */}
-        <section className={`hero ${sleeping ? "asleep" : "awake"}`}>
-          <span className="hero-blob b1" aria-hidden />
-          <span className="hero-blob b2" aria-hidden />
-          {sleeping && <span className="hero-stars" aria-hidden />}
-          <div className="hero-top">
-            <span className="hero-badge">
-              {sleeping ? <Moon size={18} /> : <Sun size={18} />}
-              {sleeping ? t("asleep") : t("awake")}
-            </span>
-            {(sleeping || awakeSince) && (
-              <span className="hero-since num">
-                {t("since", { time: fmtClock(sleeping ? sleeping.started_at : new Date(awakeSince!), profile?.time_format) })}
-              </span>
-            )}
-          </div>
-          <div className="big num">
-            {sleeping
-              ? fmtDuration(now - new Date(sleeping.started_at).getTime(), lang)
-              : awakeSince ? fmtDuration(now - awakeSince, lang) : "—"}
-          </div>
-          <button className="glass-btn block press" onClick={() => quick("sleep")}>
-            {sleeping ? <Sun size={20} /> : <Moon size={20} />}
-            {sleeping ? t("wakeUp") : t("startSleep")}
-          </button>
-          <div className="stats">
-            <div><small>{t("totalSleepToday")}</small><b className="num">{fmtDuration(stats.sleepMs, lang)}</b></div>
-            <div><small>{t("naps")}</small><b className="num">{stats.naps}</b></div>
-            <div><small>{t("longestNight")}</small><b className="num">{fmtDuration(longestNight(events, now), lang)}</b></div>
-          </div>
-        </section>
+        {/* Running timers only: the sleep card slides in while sleep runs, other timers as one line */}
+        <RunningCards now={now} />
 
         {/* Quick add — right under the sleep card, thumb-reachable */}
         <div className="quick">

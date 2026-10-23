@@ -16,6 +16,7 @@
   --material: rgba(250, 250, 253, 0.8);
   --danger: #e5484d;
   --stop: #f06a6a;
+  --hl-red: #e5484d;
   --amber: #c27a00;
 
   /* Pastel category palette */
@@ -77,6 +78,7 @@
   --separator: rgba(84, 84, 88, 0.6);
   --material: rgba(28, 28, 34, 0.78);
   --amber: #ffb340;
+  --hl-red: #ff6b6b;
   --c-sleep: #8784ee;
   --c-sleep-nap: #6f6cd8;
   --c-sleep-night: #a6a4f5;
@@ -102,8 +104,11 @@
   --wk-night: #6d66c9;
   --wk-nap: #8d80d6;
   --wk-night-band: rgba(140, 130, 255, 0.08);
-  --wash: radial-gradient(120% 55% at 0% 0%, #23204a 0%, transparent 60%),
-    radial-gradient(90% 45% at 100% 6%, #2e1f2a 0%, transparent 60%), #0e0d14;
+  --wash: radial-gradient(90% 45% at 10% 0%, rgba(76, 70, 190, 0.35) 0%, transparent 70%),
+    radial-gradient(70% 40% at 100% 18%, rgba(150, 70, 170, 0.22) 0%, transparent 70%),
+    radial-gradient(80% 45% at 30% 75%, rgba(40, 120, 160, 0.16) 0%, transparent 70%),
+    radial-gradient(60% 35% at 90% 95%, rgba(90, 60, 180, 0.18) 0%, transparent 70%),
+    linear-gradient(180deg, #0b0b1a 0%, #0d0b18 60%, #08080f 100%);
   color-scheme: dark;
 }
 
@@ -521,11 +526,8 @@ button.chip[aria-pressed="false"] { background: var(--fill); }
 .wk-ev.sleep { background: var(--fill); border-radius: 6px; min-height: 3px; z-index: 1; }
 .wk-ev.bar { inset-inline: 2px; height: 5px; border-radius: 3px; z-index: 2; background: var(--fill); }
 .wk-ev.mark { inset-inline: 5px; height: 4px; border-radius: 2px; z-index: 3; background: var(--fill); }
-/* Gradient stroke: keeps the category fill, outlines it with category → accent */
-.wk-ev.hl, .hl-swatch.hl {
-  border: 2px solid transparent;
-  background: linear-gradient(var(--fill), var(--fill)) padding-box, linear-gradient(90deg, var(--c1), var(--c2)) border-box;
-}
+/* Highlight: keeps the category fill, outlined in red */
+.wk-ev.hl, .hl-swatch.hl { border: 2px solid var(--hl-red); background: var(--fill); }
 .wk-ev.mark.hl { height: 8px; inset-inline: 3px; border-radius: 4px; }
 .wk-ev.bar.hl { min-height: 8px; }
 .wk-ev.sleep.hl { border-width: 2.5px; }
@@ -565,3 +567,59 @@ button.chip[aria-pressed="false"] { background: var(--fill); }
 }
 .sg-filter .filter-dot { inset-block-start: 3px; inset-inline-end: 3px; }
 .since .head svg { flex: none; }
+
+/* ------------------------------------------------------------------ */
+/* Dark mode sky: a quiet starfield over the galaxy wash               */
+/* ------------------------------------------------------------------ */
+[data-theme="dark"] body::before, [data-theme="dark"] body::after {
+  content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+}
+[data-theme="dark"] body::before {
+  background-image:
+    radial-gradient(1px 1px at 12% 18%, rgba(255, 255, 255, 0.8) 50%, transparent 51%),
+    radial-gradient(1px 1px at 37% 64%, rgba(210, 220, 255, 0.7) 50%, transparent 51%),
+    radial-gradient(1.4px 1.4px at 68% 32%, rgba(255, 255, 255, 0.85) 50%, transparent 51%),
+    radial-gradient(1px 1px at 84% 78%, rgba(200, 210, 255, 0.6) 50%, transparent 51%),
+    radial-gradient(1px 1px at 55% 12%, rgba(255, 255, 255, 0.6) 50%, transparent 51%),
+    radial-gradient(1.2px 1.2px at 22% 88%, rgba(220, 200, 255, 0.7) 50%, transparent 51%);
+  background-size: 260px 260px;
+  opacity: 0.55;
+  animation: sky 7s ease-in-out infinite alternate;
+}
+[data-theme="dark"] body::after {
+  background-image:
+    radial-gradient(1.6px 1.6px at 20% 40%, rgba(170, 200, 255, 0.9) 50%, transparent 51%),
+    radial-gradient(1px 1px at 75% 15%, rgba(255, 255, 255, 0.7) 50%, transparent 51%),
+    radial-gradient(1.3px 1.3px at 45% 85%, rgba(230, 210, 255, 0.8) 50%, transparent 51%);
+  background-size: 410px 410px;
+  opacity: 0.35;
+  animation: sky 11s ease-in-out infinite alternate-reverse;
+}
+[data-night="1"] body::before, [data-night="1"] body::after { opacity: 0.22; }
+@keyframes sky { from { opacity: 0.2; } to { opacity: 0.6; } }
+
+/* ------------------------------------------------------------------ */
+/* Running timers on Today                                             */
+/* ------------------------------------------------------------------ */
+.slide-wrap { display: grid; grid-template-rows: 1fr; animation: slideIn 0.5s cubic-bezier(0.2, 0.9, 0.25, 1.05) both; }
+.slide-wrap > * { min-height: 0; }
+.slide-wrap.out { animation: slideOut 0.38s ease-in forwards; pointer-events: none; }
+@keyframes slideIn { from { grid-template-rows: 0fr; opacity: 0; transform: translateY(-14px) scale(0.97); } }
+@keyframes slideOut { to { grid-template-rows: 0fr; opacity: 0; transform: translateY(-14px) scale(0.97); } }
+
+.timer-line {
+  display: flex; align-items: center; gap: 12px; min-height: 60px; padding: 8px 8px 8px 10px; padding-inline: 10px 8px;
+  border-radius: 20px; position: relative; overflow: hidden;
+  background: linear-gradient(120deg, color-mix(in srgb, var(--cat) 30%, var(--surface)), color-mix(in srgb, var(--cat) 12%, var(--surface)));
+  border: 1px solid color-mix(in srgb, var(--cat) 35%, transparent);
+  box-shadow: 0 8px 22px -12px color-mix(in srgb, var(--cat) 70%, transparent), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+.timer-line::before {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.35), transparent 55%);
+}
+.tl-icon { width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center; flex: none; background: var(--cat); color: #fff; }
+.tl-label { flex: 1; min-width: 0; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tl-time { font-weight: 700; font-size: 1.125rem; }
+[data-theme="dark"] .timer-line { box-shadow: none; }
+[data-theme="dark"] .timer-line::before { background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), transparent 55%); }

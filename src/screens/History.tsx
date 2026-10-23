@@ -4,13 +4,13 @@ import { useApp, useNow } from "../state/AppContext";
 import { SleepGraph } from "../components/SleepGraph";
 import { EventLog } from "../components/EventLog";
 import { catVar } from "../lib/categories";
-import { WeekGrid, isVisible } from "../components/WeekGrid";
+import { WeekGrid } from "../components/WeekGrid";
 import { dayStats } from "../lib/summary";
 import { addDays, DAY, fmtDate, fmtDuration, HOUR, overlap, sameDay, startOfDay } from "../lib/time";
 import type { BabyEvent } from "../types";
 
 export function History() {
-  const { t, lang, events, settings, openSheet } = useApp();
+  const { t, lang, events, openSheet } = useApp();
   const now = useNow(30_000);
   const [week, setWeek] = useState(0); // weeks back from this one
   const [day, setDay] = useState<Date | null>(null);
@@ -19,7 +19,7 @@ export function History() {
 
   const lastDay = addDays(startOfDay(), -week * 7);
   const days = Array.from({ length: 7 }, (_, i) => addDays(lastDay, i - 6));
-  const shown = events.filter((e) => isVisible(e, settings.historyHidden));
+  const shown = events;
 
   // Sleep per day this week vs the week before, for a neutral comparison.
   const sleepHours = (d: Date) => dayStats(events, d, now).sleepMs / HOUR;
@@ -33,7 +33,6 @@ export function History() {
         <h1 className="t-large" style={{ margin: 0 }}>{t("history")}</h1>
         <button className="filter-btn press" onClick={() => openSheet({ kind: "filters" })}>
           <SlidersHorizontal size={16} />{t("filters")}
-          {(settings.historyHidden.length > 0) && <span className="filter-dot" />}
         </button>
       </div>
 
